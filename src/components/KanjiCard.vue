@@ -121,7 +121,7 @@ onMounted(() => {
     <!-- Botón de regreso -->
     <router-link 
       to="/" 
-      class="fixed top-6 left-6 z-20 bg-white/90 backdrop-blur-sm hover:bg-white text-gray-800 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
+      class="fixed top-6 left-6 z-20 bg-Marfil/90 backdrop-blur-sm hover:bg-Marfil text-grisTinta p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
     >
       <svg class="w-6 h-6 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -131,7 +131,7 @@ onMounted(() => {
     <!-- Botón de modo estudio -->
     <button
       @click="toggleStudyMode"
-      class="fixed top-6 right-6 z-20 bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2"
+      class="fixed top-6 right-6 z-20 bg-Benibana hover:bg-cardinal text-snow px-4 py-2 rounded-full shadow-lg transition-all duration-300 flex items-center gap-2"
     >
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
@@ -141,17 +141,17 @@ onMounted(() => {
 
     <!-- Tarjeta principal -->
     <div class="kanji-card max-w-lg w-full mx-auto">
-      <div class="bg-snow backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-gray-100">
+      <div class="bg-Marfil backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-platinum">
         
         <!-- Progreso -->
         <div v-if="!studyMode && attempts > 0" class="mb-6">
           <div class="flex justify-between items-center mb-2">
-            <span class="text-sm font-medium text-gray-600">Progreso</span>
-            <span class="text-sm text-gray-500">{{ attempts }}/{{ maxAttempts }}</span>
+            <span class="text-sm font-medium text-azulIndigo">Progreso</span>
+            <span class="text-sm text-Aonobi">{{ attempts }}/{{ maxAttempts }}</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
+          <div class="w-full bg-GrisNeutro rounded-full h-2">
             <div 
-              class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+              class="bg-gradient-to-r from-airForceBlue to-Benibana h-2 rounded-full transition-all duration-500"
               :style="{ width: progressPercent + '%' }"
             ></div>
           </div>
@@ -159,8 +159,8 @@ onMounted(() => {
 
         <!-- Kanji principal -->
         <div class="text-center mb-6">
-          <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-4 border-2 border-gray-200">
-            <div class="text-7xl md:text-8xl font-bold text-gray-800 leading-none select-none">
+          <div class="bg-gradient-to-br from-platinum to-GrisNeutro rounded-2xl p-6 mb-4 border-2 border-timberWolf">
+            <div class="text-7xl md:text-8xl font-bold text-grisTinta leading-none select-none">
               {{ Kanji }}
             </div>
           </div>
@@ -169,31 +169,31 @@ onMounted(() => {
         <!-- Información del kanji -->
         <div class="space-y-4 mb-6">
           <!-- Significado -->
-          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
+          <div class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-airForceBlue">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="w-8 h-8 bg-airForceBlue rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                 </svg>
               </div>
               <div>
-                <p class="text-sm font-medium text-blue-700">Significado</p>
-                <p class="text-lg font-semibold text-blue-900">{{ CorrectMeaning }}</p>
+                <p class="text-sm font-medium text-azulIndigo">Significado</p>
+                <p class="text-lg font-semibold text-grisTinta">{{ CorrectMeaning }}</p>
               </div>
             </div>
           </div>
 
           <!-- Lectura (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
-          <div v-if="studyMode || showAnswer" class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+          <div v-if="studyMode || showAnswer" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-verdeMatcha">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="w-8 h-8 bg-verdeMatcha rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z"></path>
                 </svg>
               </div>
               <div>
-                <p class="text-sm font-medium text-green-700">Lectura</p>
-                <p class="text-lg font-semibold text-green-900">{{ CorrectReading }}</p>
+                <p class="text-sm font-medium text-azulIndigo">Lectura</p>
+                <p class="text-lg font-semibold text-grisTinta">{{ CorrectReading }}</p>
               </div>
             </div>
           </div>
@@ -203,20 +203,20 @@ onMounted(() => {
         <div v-if="!studyMode" class="space-y-4">
           
           <!-- Pista -->
-          <div v-if="showHint" class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <div v-if="showHint" class="bg-coquelicot/10 border border-cardinal rounded-xl p-4">
             <div class="flex items-center gap-2 mb-2">
-              <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-cardinal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
               </svg>
-              <span class="font-medium text-yellow-800">Pista</span>
+              <span class="font-medium text-firebrick">Pista</span>
             </div>
-            <p class="text-yellow-700">La lectura comienza con: <span class="font-bold">{{ getHint() }}</span></p>
+            <p class="text-cardinal">La lectura comienza con: <span class="font-bold">{{ getHint() }}</span></p>
           </div>
 
           <!-- Input y validación -->
           <div v-if="!showAnswer" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-black mb-2">
+              <label class="block text-sm font-medium text-grisTinta mb-2">
                 ¿Cuál es la lectura de este kanji?
               </label>
               <input
@@ -224,15 +224,15 @@ onMounted(() => {
                 @keyup.enter="validateAnswer"
                 type="text"
                 placeholder="Escribe la lectura aquí..."
-                class="error-shake w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 text-lg"
-                :class="{ 'border-red-500 bg-red-50': isCorrect === false }"
+                class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-airForceBlue focus:border-transparent outline-none transition-all duration-200 text-lg"
+                :class="{ 'border-cardinal bg-coquelicot/10': isCorrect === false }"
               >
             </div>
             
             <button
               @click="validateAnswer"
               :disabled="!userInput.trim()"
-              class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg"
+              class="w-full bg-gradient-to-r from-airForceBlue to-Benibana hover:from-azulIndigo hover:to-cardinal disabled:from-GrisNeutro disabled:to-Aonobi text-snow font-semibold py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg"
             >
               Validar Respuesta
             </button>

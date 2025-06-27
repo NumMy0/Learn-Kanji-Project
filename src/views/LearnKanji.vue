@@ -44,7 +44,7 @@ onMounted(async () => {
     >
         <div class="text-center">
             <div class="loading-spinner animate-spin rounded-full h-12 w-12 border-b-2 border-Benibana mx-auto mb-4"></div>
-            <p class="loading-text text-text text-lg mb-2">Cargando kanji del nivel {{ level }}...</p>
+            <p class="loading-text text-snow text-lg mb-2">Cargando kanji del nivel {{ level }}...</p>
         </div>
     </div>
 
@@ -54,12 +54,12 @@ onMounted(async () => {
         role="alert"
         aria-live="assertive"
     >
-        <div class="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-lg max-w-md">
+        <div class="bg-coquelicot/10 border border-cardinal text-firebrick px-6 py-4 rounded-lg max-w-md">
             <h3 class="font-bold text-lg mb-2">Error al cargar el kanji</h3>
             <p class="mb-4">{{ error }}</p>
             <button 
                 @click="loadKanjiData"
-                class="bg-Benibana text-white px-4 py-2 rounded hover:bg-red-600 transition duration-200"
+                class="bg-Benibana text-snow px-4 py-2 rounded hover:bg-cardinal transition duration-200"
                 aria-label="Reintentar cargar kanji"
             >
                 Reintentar
@@ -85,8 +85,8 @@ onMounted(async () => {
     >
         <div class="text-center">
             <div class="animate-pulse">
-                <div class="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-4"></div>
-                <p class="text-text text-lg">Preparando el kanji...</p>
+                <div class="w-16 h-16 bg-GrisNeutro rounded-full mx-auto mb-4"></div>
+                <p class="text-snow text-lg">Preparando el kanji...</p>
             </div>
         </div>
     </div>
