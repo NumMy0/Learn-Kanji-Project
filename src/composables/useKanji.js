@@ -114,7 +114,6 @@ export function useKanji() {
       // Intentar usar la Web Translation API si está disponible
       if (translator.value) {
         const result = await translator.value.translate(text);
-        console.log(`Traducción API: "${text}" -> "${result}"`);
         return result;
       }
     } catch (error) {
@@ -123,7 +122,6 @@ export function useKanji() {
 
     // Fallback al diccionario
     const dictResult = translateWithDictionary(text);
-    console.log(`Traducción diccionario: "${text}" -> "${dictResult}"`);
     return dictResult;
   };
 
@@ -134,8 +132,6 @@ export function useKanji() {
 
       // Inicializar traductor si no existe
       await initTranslator();
-
-      console.log("Fetching kanji for level:", level);
 
       const levelResponse = await fetch(
         `https://kanjiapi.dev/v1/kanji/${level}`
@@ -148,7 +144,6 @@ export function useKanji() {
       }
 
       const levelData = await levelResponse.json();
-      console.log("API Response for level:", levelData);
 
       if (!Array.isArray(levelData) || levelData.length === 0) {
         throw new Error(`No se encontraron kanjis para el nivel ${level}`);
@@ -157,8 +152,6 @@ export function useKanji() {
       // Seleccionar el primer kanji
       const selectedKanji = levelData[0];
       kanjiData.Kanji = selectedKanji;
-
-      console.log("Selected kanji:", selectedKanji);
 
       // Segunda llamada: obtener detalles del kanji específico
       const kanjiResponse = await fetch(
@@ -172,7 +165,6 @@ export function useKanji() {
       }
 
       const kanjiDetails = await kanjiResponse.json();
-      console.log("Kanji details:", kanjiDetails);
 
       // Actualizar lecturas del kanji
       kanjiData.CorrectReadingOn =
@@ -192,8 +184,6 @@ export function useKanji() {
 
       // Traducir el significado
       kanjiData.CorrectMeaning = await translateText(originalMeaning);
-
-      console.log("Final kanjiData:", kanjiData);
 
       return kanjiData;
     } catch (err) {

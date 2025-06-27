@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",
-    "git": "^0.1.5",
     "motion": "^12.19.1",
     "tailwindcss": "^4.1.10",
     "unplugin-vue-components": "^28.7.0",

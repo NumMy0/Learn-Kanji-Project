@@ -44,6 +44,14 @@ const kanjiLevels = ref([
     color: 'from-RojoCarmesi to-cardinal',
     difficulty: 'Experto',
     estimated: '~2,136 kanjis'
+  }, 
+  {
+    level: 'Configuración',
+    description: 'Ajustes de la aplicación, personaliza tu experiencia de aprendizaje.',
+    kanji: '設定',
+    color: 'from-MossGreen to-Vanilla',
+    difficulty: 'Información',
+    estimated: ''
   }
 ]);
 
@@ -145,28 +153,8 @@ onMounted(async () => {
           </div>
         </router-link>
       </div>
-
-      <!-- Información adicional -->
-      <div class="bg-Marfil/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-platinum mb-8">
-        <h3 class="text-xl font-semibold text-grisTinta mb-3">¿Qué aprenderás?</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-azulIndigo">
-          <div class="flex items-center">
-            <div class="w-2 h-2 bg-MossGreen rounded-full mr-3"></div>
-            <span>Reconocimiento de kanjis</span>
-          </div>
-          <div class="flex items-center">
-            <div class="w-2 h-2 bg-FernGreen rounded-full mr-3"></div>
-            <span>Significados en español</span>
-          </div>
-          <div class="flex items-center">
-            <div class="w-2 h-2 bg-HunterGree rounded-full mr-3"></div>
-            <span>Práctica interactiva</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Botones de acción adicionales -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <div class="flex flex-col sm:flex-row gap-4 justify-center p-3">
         <button class="btn-3d btn-3d-green-light">
           Guía de uso
         </button>
