@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme {
+:root {
   --color-background: #121212;
   --color-text: #EDEDED;
   --color-timberWolf: #CED0CE;
@@ -20,4 +20,708 @@
   --color-Benibana: #E63946;
   --color-GrisTintaClaro: #353535;
   --color-Aonobi: #5C7080;
+  --color-DarkGreen: #132A13;
+  --color-HunterGree: #31572C;
+  --color-FernGreen: #4F772D;
+  --color-MossGreen: #90A955;
+  --color-Mindaro: #ECF39E;
+  --color-Vanilla: #E3DC95;
+  --color-Pearl: #E3DCC2;
+
+}
+
+/* Botón 3D personalizado */
+.btn-3d {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  outline: none;
+  border: 0;
+  vertical-align: middle;
+  text-decoration: none;
+  font-family: inherit;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 1.25em 2em;
+  border-radius: 0.75em;
+  transform-style: preserve-3d;
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              background 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+/* Variante principal - Benibana */
+.btn-3d-primary {
+  color: var(--color-snow);
+  background: var(--color-Benibana);
+  border: 2px solid var(--color-cardinal);
+}
+
+.btn-3d-primary::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-cardinal);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-firebrick), 0 0.625em 0 0 var(--color-RojoCarmesi);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-primary:hover {
+  background: var(--color-firebrick);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-primary:hover::before {
+  box-shadow: 0 0 0 2px var(--color-firebrick), 0 0.5em 0 0 var(--color-RojoCarmesi);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-primary:active {
+  background: var(--color-firebrick);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-primary:active::before {
+  box-shadow: 0 0 0 2px var(--color-firebrick), 0 0 var(--color-RojoCarmesi);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* Variante secundaria - AirForceBlue */
+.btn-3d-secondary {
+  color: var(--color-snow);
+  background: var(--color-airForceBlue);
+  border: 2px solid var(--color-azulIndigo);
+}
+
+.btn-3d-secondary::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-azulIndigo);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-Aonobi), 0 0.625em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-secondary:hover {
+  background: var(--color-azulIndigo);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-secondary:hover::before {
+  box-shadow: 0 0 0 2px var(--color-Aonobi), 0 0.5em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-secondary:active {
+  background: var(--color-azulIndigo);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-secondary:active::before {
+  box-shadow: 0 0 0 2px var(--color-Aonobi), 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* Variante success - VerdeMatcha */
+.btn-3d-success {
+  color: var(--color-grisTinta);
+  background: var(--color-verdeMatcha);
+  border: 2px solid var(--color-azulIndigo);
+}
+
+.btn-3d-success::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-azulIndigo);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-Aonobi), 0 0.625em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-success:hover {
+  background: #98b876;
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-success:hover::before {
+  box-shadow: 0 0 0 2px var(--color-Aonobi), 0 0.5em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-success:active {
+  background: #98b876;
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-success:active::before {
+  box-shadow: 0 0 0 2px var(--color-Aonobi), 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* Variantes específicas para niveles JLPT */
+.btn-3d-jlpt5 {
+  color: var(--color-DarkGreen);
+  background: var(--color-Mindaro);
+  border: 2px solid var(--color-MossGreen);
+}
+
+.btn-3d-jlpt5::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-MossGreen);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-FernGreen), 0 0.625em 0 0 var(--color-HunterGree);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-jlpt5:hover {
+  background: var(--color-MossGreen);
+  color: var(--color-snow);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-jlpt5:hover::before {
+  box-shadow: 0 0 0 2px var(--color-FernGreen), 0 0.5em 0 0 var(--color-HunterGree);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-jlpt5:active {
+  background: var(--color-MossGreen);
+  color: var(--color-snow);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-jlpt5:active::before {
+  box-shadow: 0 0 0 2px var(--color-FernGreen), 0 0 var(--color-HunterGree);
+  transform: translate3d(0, 0, -1em);
+}
+
+.btn-3d-jlpt4 {
+  color: var(--color-snow);
+  background: var(--color-MossGreen);
+  border: 2px solid var(--color-FernGreen);
+}
+
+.btn-3d-jlpt4::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-FernGreen);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0.625em 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-jlpt4:hover {
+  background: var(--color-FernGreen);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-jlpt4:hover::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0.5em 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-jlpt4:active {
+  background: var(--color-FernGreen);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-jlpt4:active::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0, -1em);
+}
+
+.btn-3d-jlpt3 {
+  color: var(--color-snow);
+  background: var(--color-FernGreen);
+  border: 2px solid var(--color-HunterGree);
+}
+
+.btn-3d-jlpt3::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-HunterGree);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0.625em 0 0 var(--color-black);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-jlpt3:hover {
+  background: var(--color-HunterGree);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-jlpt3:hover::before {
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0.5em 0 0 var(--color-black);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-jlpt3:active {
+  background: var(--color-HunterGree);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-jlpt3:active::before {
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0 var(--color-black);
+  transform: translate3d(0, 0, -1em);
+}
+
+.btn-3d-jlpt2 {
+  color: var(--color-snow);
+  background: var(--color-HunterGree);
+  border: 2px solid var(--color-DarkGreen);
+}
+
+.btn-3d-jlpt2::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-DarkGreen);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-black), 0 0.625em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-jlpt2:hover {
+  background: var(--color-DarkGreen);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-jlpt2:hover::before {
+  box-shadow: 0 0 0 2px var(--color-black), 0 0.5em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-jlpt2:active {
+  background: var(--color-DarkGreen);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-jlpt2:active::before {
+  box-shadow: 0 0 0 2px var(--color-black), 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0, -1em);
+}
+
+.btn-3d-jlpt1 {
+  color: var(--color-Mindaro);
+  background: var(--color-DarkGreen);
+  border: 2px solid var(--color-black);
+}
+
+.btn-3d-jlpt1::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-black);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-grisTinta), 0 0.625em 0 0 var(--color-GrisTintaClaro);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-jlpt1:hover {
+  background: var(--color-black);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-jlpt1:hover::before {
+  box-shadow: 0 0 0 2px var(--color-grisTinta), 0 0.5em 0 0 var(--color-GrisTintaClaro);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-jlpt1:active {
+  background: var(--color-black);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-jlpt1:active::before {
+  box-shadow: 0 0 0 2px var(--color-grisTinta), 0 0 var(--color-GrisTintaClaro);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* Botón 3D disabled state */
+.btn-3d:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none !important;
+}
+
+.btn-3d:disabled::before {
+  transform: translate3d(0, 0.2em, -1em) !important;
+  box-shadow: 0 0 0 2px var(--color-GrisNeutro), 0 0.2em 0 0 var(--color-Aonobi) !important;
+}
+
+/* Variante para botones flotantes */
+.btn-3d-floating {
+  color: var(--color-snow);
+  background: var(--color-Benibana);
+  border: 2px solid var(--color-cardinal);
+  border-radius: 50px;
+  padding: 0.75em 1.5em;
+}
+
+.btn-3d-floating::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-cardinal);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-firebrick), 0 0.5em 0 0 var(--color-RojoCarmesi);
+  transform: translate3d(0, 0.5em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-floating:hover {
+  background: var(--color-firebrick);
+  transform: translate(0, 0.15em);
+}
+
+.btn-3d-floating:hover::before {
+  box-shadow: 0 0 0 2px var(--color-firebrick), 0 0.35em 0 0 var(--color-RojoCarmesi);
+  transform: translate3d(0, 0.35em, -1em);
+}
+
+.btn-3d-floating:active {
+  background: var(--color-firebrick);
+  transform: translate(0em, 0.5em);
+}
+
+.btn-3d-floating:active::before {
+  box-shadow: 0 0 0 2px var(--color-firebrick), 0 0 var(--color-RojoCarmesi);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* Variante para botones de tarjetas */
+.btn-3d-card {
+  color: var(--color-grisTinta);
+  background: var(--color-Marfil);
+  border: 2px solid var(--color-platinum);
+  padding: 0.8em 1.5em;
+  font-size: 0.9em;
+}
+
+.btn-3d-card::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-platinum);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-timberWolf), 0 0.4em 0 0 var(--color-GrisNeutro);
+  transform: translate3d(0, 0.4em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-card:hover {
+  background: var(--color-snow);
+  transform: translate(0, 0.1em);
+}
+
+.btn-3d-card:hover::before {
+  box-shadow: 0 0 0 2px var(--color-timberWolf), 0 0.3em 0 0 var(--color-GrisNeutro);
+  transform: translate3d(0, 0.3em, -1em);
+}
+
+.btn-3d-card:active {
+  background: var(--color-snow);
+  transform: translate(0em, 0.4em);
+}
+
+.btn-3d-card:active::before {
+  box-shadow: 0 0 0 2px var(--color-timberWolf), 0 0 var(--color-GrisNeutro);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* Variantes verdes adicionales para botones secundarios */
+.btn-3d-green-light {
+  color: var(--color-DarkGreen);
+  background: var(--color-MossGreen);
+  border: 2px solid var(--color-FernGreen);
+}
+
+.btn-3d-green-light::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-FernGreen);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0.625em 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-green-light:hover {
+  background: var(--color-FernGreen);
+  color: var(--color-snow);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-green-light:hover::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0.5em 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-green-light:active {
+  background: var(--color-FernGreen);
+  color: var(--color-snow);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-green-light:active::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0, -1em);
+}
+
+.btn-3d-green-medium {
+  color: var(--color-Mindaro);
+  background: var(--color-FernGreen);
+  border: 2px solid var(--color-HunterGree);
+}
+
+.btn-3d-green-medium::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-HunterGree);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0.625em 0 0 var(--color-black);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-green-medium:hover {
+  background: var(--color-HunterGree);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-green-medium:hover::before {
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0.5em 0 0 var(--color-black);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-green-medium:active {
+  background: var(--color-HunterGree);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-green-medium:active::before {
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0 var(--color-black);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* Variantes verdes específicas para KanjiCard */
+.btn-3d-green-back {
+  color: var(--color-snow);
+  background: var(--color-HunterGree);
+  border: 2px solid var(--color-DarkGreen);
+  padding: 0.75em;
+  border-radius: 50%;
+}
+
+.btn-3d-green-back::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-DarkGreen);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-black), 0 0.5em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.5em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-green-back:hover {
+  background: var(--color-DarkGreen);
+  transform: translate(0, 0.15em);
+}
+
+.btn-3d-green-back:hover::before {
+  box-shadow: 0 0 0 2px var(--color-black), 0 0.35em 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0.35em, -1em);
+}
+
+.btn-3d-green-back:active {
+  background: var(--color-DarkGreen);
+  transform: translate(0em, 0.5em);
+}
+
+.btn-3d-green-back:active::before {
+  box-shadow: 0 0 0 2px var(--color-black), 0 0 var(--color-grisTinta);
+  transform: translate3d(0, 0, -1em);
+}
+
+.btn-3d-green-floating {
+  color: var(--color-snow);
+  background: var(--color-FernGreen);
+  border: 2px solid var(--color-HunterGree);
+  border-radius: 50px;
+  padding: 0.75em 1.5em;
+}
+
+.btn-3d-green-floating::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-HunterGree);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0.5em 0 0 var(--color-black);
+  transform: translate3d(0, 0.5em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-green-floating:hover {
+  background: var(--color-HunterGree);
+  transform: translate(0, 0.15em);
+}
+
+.btn-3d-green-floating:hover::before {
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0.35em 0 0 var(--color-black);
+  transform: translate3d(0, 0.35em, -1em);
+}
+
+.btn-3d-green-floating:active {
+  background: var(--color-HunterGree);
+  transform: translate(0em, 0.5em);
+}
+
+.btn-3d-green-floating:active::before {
+  box-shadow: 0 0 0 2px var(--color-DarkGreen), 0 0 var(--color-black);
+  transform: translate3d(0, 0, -1em);
+}
+
+.btn-3d-green-primary {
+  color: var(--color-snow);
+  background: var(--color-MossGreen);
+  border: 2px solid var(--color-FernGreen);
+}
+
+.btn-3d-green-primary::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-FernGreen);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0.625em 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-green-primary:hover {
+  background: var(--color-FernGreen);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-green-primary:hover::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0.5em 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-green-primary:active {
+  background: var(--color-FernGreen);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-green-primary:active::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGree), 0 0 var(--color-DarkGreen);
+  transform: translate3d(0, 0, -1em);
 }

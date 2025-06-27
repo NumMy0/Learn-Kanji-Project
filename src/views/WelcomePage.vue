@@ -122,70 +122,57 @@ onMounted(async () => {
           v-for="(item, index) in kanjiLevels"
           :key="item.level"
           :to="`/kanji/${item.level.toLowerCase()}`"
-          class="level-card group"
+          :class="`level-card btn-3d btn-3d-${item.level.toLowerCase().replace('-', '')} text-center block`"
         >
-          <div class="relative bg-Marfil/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border border-platinum overflow-hidden">
-            
-            <!-- Gradiente de fondo -->
-            <div :class="`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`"></div>
-            
-            <!-- Contenido de la tarjeta -->
-            <div class="relative z-10">
-              
-              <!-- Kanji decorativo -->
-              <div class="text-4xl font-bold text-GrisNeutro mb-3 group-hover:text-grisTinta transition-colors">
-                {{ item.kanji }}
-              </div>
-              
-              <!-- Nivel -->
-              <h3 class="text-2xl font-bold text-grisTinta mb-2">
-                {{ item.level }}
-              </h3>
-              
-              <!-- Dificultad y estimación -->
-              <div class="flex justify-between items-center mb-3">
-                <span :class="`inline-block px-3 py-1 rounded-full text-sm font-semibold text-snow bg-gradient-to-r ${item.color}`">
-                  {{ item.difficulty }}
-                </span>
-                <span class="text-sm text-Aonobi">
-                  {{ item.estimated }}
-                </span>
-              </div>
-              
-              <!-- Descripción -->
-              <p class="text-azulIndigo leading-relaxed text-sm">
-                {{ item.description }}
-              </p>
-              
-              <!-- Indicador de acción -->
-              <div class="mt-4 flex items-center justify-center text-Benibana group-hover:text-cardinal transition-colors">
-                <span class="text-sm font-semibold mr-2">Comenzar</span>
-                <svg class="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </div>
-              
-            </div>
+          <!-- Kanji decorativo -->
+          <div class="text-3xl font-bold mb-2">
+            {{ item.kanji }}
+          </div>
+          
+          <!-- Nivel -->
+          <h3 class="text-xl font-bold mb-2">
+            {{ item.level }}
+          </h3>
+          
+          <!-- Dificultad -->
+          <div class="text-sm font-semibold mb-2">
+            {{ item.difficulty }}
+          </div>
+          
+          <!-- Estimación -->
+          <div class="text-xs opacity-75">
+            {{ item.estimated }}
           </div>
         </router-link>
       </div>
 
-      <div class="bg-Marfil/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-platinum">
+      <!-- Información adicional -->
+      <div class="bg-Marfil/90 backdrop-blur-sm rounded-xl p-6 shadow-lg border border-platinum mb-8">
         <h3 class="text-xl font-semibold text-grisTinta mb-3">¿Qué aprenderás?</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-azulIndigo">
           <div class="flex items-center">
-            <div class="w-2 h-2 bg-verdeMatcha rounded-full mr-3"></div>
+            <div class="w-2 h-2 bg-MossGreen rounded-full mr-3"></div>
             <span>Reconocimiento de kanjis</span>
           </div>
           <div class="flex items-center">
-            <div class="w-2 h-2 bg-airForceBlue rounded-full mr-3"></div>
-            <span>Pronunciación correcta</span>
-          </div>
-          <div class="flex items-center">
-            <div class="w-2 h-2 bg-Benibana rounded-full mr-3"></div>
+            <div class="w-2 h-2 bg-FernGreen rounded-full mr-3"></div>
             <span>Significados en español</span>
           </div>
+          <div class="flex items-center">
+            <div class="w-2 h-2 bg-HunterGree rounded-full mr-3"></div>
+            <span>Práctica interactiva</span>
+          </div>
         </div>
+      </div>
+
+      <!-- Botones de acción adicionales -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button class="btn-3d btn-3d-green-light">
+          Guía de uso
+        </button>
+        <button class="btn-3d btn-3d-green-medium">
+          Acerca del proyecto
+        </button>
       </div>
 
     </div>
