@@ -25,6 +25,8 @@ const props = defineProps({
 });
 
 const userInput = ref('');
+const userInputOn = ref('');
+const userInputKun = ref('');
 const showAnswer = ref(false);
 const isCorrect = ref(null);
 const attempts = ref(0);
@@ -33,6 +35,7 @@ const showHint = ref(false);
 const studyMode = ref(false);
 const showKeyboard = ref(false);
 const matchedReadingType = ref('');
+const activeInput = ref('on'); // 'on' o 'kun'
 
 // Computed para mostrar el progreso
 const progressPercent = computed(() => {
@@ -47,24 +50,30 @@ const normalizeText = (text) => {
 
 // Función para validar la respuesta
 const validateAnswer = () => {
-    if (!userInput.value.trim()) return;
+    if (!userInputOn.value.trim() || !userInputKun.value.trim()) return;
     
     attempts.value++;
-    const userAnswer = normalizeText(userInput.value);
+    const userAnswerOn = normalizeText(userInputOn.value);
+    const userAnswerKun = normalizeText(userInputKun.value);
     const correctAnswerOn = normalizeText(props.CorrectReadingOn);
     const correctAnswerKun = normalizeText(props.CorrectReadingKun);
     
-    // Separar la respuesta del usuario por espacios o comas para obtener múltiples lecturas
-    const userReadings = userAnswer.split(/[,\s]+/).filter(reading => reading.length > 0);
+    // Verificar cuáles lecturas son correctas
+    const onCorrect = userAnswerOn === correctAnswerOn;
+    const kunCorrect = userAnswerKun === correctAnswerKun;
     
-    // Verificar que el usuario haya proporcionado ambas lecturas
-    const hasOnReading = userReadings.some(reading => reading === correctAnswerOn);
-    const hasKunReading = userReadings.some(reading => reading === correctAnswerKun);
-    
-    if (hasOnReading && hasKunReading) {
+    if (onCorrect && kunCorrect) {
         matchedReadingType.value = 'ambas lecturas (On y Kun)';
         isCorrect.value = true;
     } else {
+        // Guardar información sobre qué está incorrecto para mostrar feedback específico
+        if (onCorrect && !kunCorrect) {
+            matchedReadingType.value = 'lectura On correcta, pero Kun incorrecta';
+        } else if (!onCorrect && kunCorrect) {
+            matchedReadingType.value = 'lectura Kun correcta, pero On incorrecta';
+        } else {
+            matchedReadingType.value = 'ambas lecturas incorrectas';
+        }
         isCorrect.value = false;
     }
     
@@ -99,12 +108,15 @@ const validateAnswer = () => {
 // Función para resetear el estado
 const resetCard = () => {
     userInput.value = '';
+    userInputOn.value = '';
+    userInputKun.value = '';
     showAnswer.value = false;
     isCorrect.value = null;
     attempts.value = 0;
     showHint.value = false;
     studyMode.value = false;
     matchedReadingType.value = '';
+    activeInput.value = 'on';
 };
 
 // Función para alternar modo estudio
@@ -131,13 +143,23 @@ const getHint = () => {
 
 // Funciones para el teclado japonés
 const handleKeyboardInput = (char) => {
-    userInput.value += char;
+    if (activeInput.value === 'on') {
+        userInputOn.value += char;
+    } else {
+        userInputKun.value += char;
+    }
 };
 
-const handleKeyboardBackspace = () => {
-    if (userInput.value.length > 0) {
-        userInput.value = userInput.value.slice(0, -1);
+const handleKeyboardClear = () => {
+    if (activeInput.value === 'on') {
+        userInputOn.value = '';
+    } else {
+        userInputKun.value = '';
     }
+};
+
+const setActiveInput = (inputType) => {
+    activeInput.value = inputType;
 };
 
 const toggleKeyboard = () => {
@@ -301,26 +323,51 @@ onMounted(() => {
 
               <!-- Input y validación -->
               <div v-if="!showAnswer" class="space-y-4">
-                <div>
-                  <label class="block text-sm font-medium text-grisTinta mb-2">
-                    Escribe ambas lecturas del kanji (On y Kun, separadas por coma o espacio)
-                  </label>
-                  <input
-                    v-model="userInput"
-                    @keyup.enter="validateAnswer"
-                    type="text"
-                    placeholder="Ej: きょう, おし.える"
-                    class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-MossGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
-                    :class="{ 'border-cardinal bg-coquelicot/10': isCorrect === false }"
-                  >
+                <!-- Inputs para las lecturas -->
+                <div class="space-y-4">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-grisTinta">
+                      Lectura On (音読み)
+                    </label>
+                    <input
+                      v-model="userInputOn"
+                      @focus="setActiveInput('on')"
+                      @keyup.enter="validateAnswer"
+                      type="text"
+                      placeholder="Escribe la lectura On..."
+                      class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-FernGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
+                      :class="{ 
+                        'border-cardinal bg-coquelicot/10': isCorrect === false,
+                        'ring-2 ring-FernGreen border-FernGreen': activeInput === 'on' && showKeyboard 
+                      }"
+                    >
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-grisTinta">
+                      Lectura Kun (訓読み)
+                    </label>
+                    <input
+                      v-model="userInputKun"
+                      @focus="setActiveInput('kun')"
+                      @keyup.enter="validateAnswer"
+                      type="text"
+                      placeholder="Escribe la lectura Kun..."
+                      class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-HunterGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
+                      :class="{ 
+                        'border-cardinal bg-coquelicot/10': isCorrect === false,
+                        'ring-2 ring-HunterGreen border-HunterGreen': activeInput === 'kun' && showKeyboard 
+                      }"
+                    >
+                  </div>
                 </div>
                 
                 <button
                   @click="validateAnswer"
-                  :disabled="!userInput.trim()"
+                  :disabled="!userInputOn.trim() || !userInputKun.trim()"
                   class="w-full btn-3d btn-3d-green-primary"
                 >
-                  Validar Respuesta
+                  Validar Ambas Lecturas
                 </button>
               </div>
 
@@ -346,13 +393,12 @@ onMounted(() => {
                     </svg>
                   </div>
                   <h3 class="text-2xl font-bold text-cardinal mb-2">Incorrecto</h3>
-                  <div class="text-grisTinta space-y-1">
-                    <p>Necesitas escribir ambas lecturas correctas:</p>
+                  <div class="text-grisTinta space-y-2">
+                    <p class="text-cardinal font-medium">{{ matchedReadingType }}</p>
                     <div class="space-y-1">
-                      <p><span class="font-bold text-cardinal">On: {{ CorrectReadingOn }}</span></p>
-                      <p><span class="font-bold text-cardinal">Kun: {{ CorrectReadingKun }}</span></p>
+                      <p><span class="font-bold text-cardinal">On correcta: {{ CorrectReadingOn }}</span></p>
+                      <p><span class="font-bold text-cardinal">Kun correcta: {{ CorrectReadingKun }}</span></p>
                     </div>
-                    <p class="text-sm mt-2">Sepáralas con coma o espacio</p>
                   </div>
                 </div>
 
@@ -383,9 +429,28 @@ onMounted(() => {
 
         <!-- Teclado japonés al costado -->
         <div v-if="showKeyboard" class="flex-shrink-0">
+          <!-- Indicador del input activo -->
+          <div class="mb-3 p-2 bg-platinum rounded-lg border border-timberWolf">
+            <p class="text-xs font-medium text-grisTinta mb-1">Escribiendo en:</p>
+            <div class="flex gap-2">
+              <span 
+                :class="activeInput === 'on' ? 'bg-FernGreen text-snow' : 'bg-GrisNeutro text-grisTinta'"
+                class="px-2 py-1 rounded text-xs font-medium transition-colors"
+              >
+                On (音読み)
+              </span>
+              <span 
+                :class="activeInput === 'kun' ? 'bg-HunterGreen text-snow' : 'bg-GrisNeutro text-grisTinta'"
+                class="px-2 py-1 rounded text-xs font-medium transition-colors"
+              >
+                Kun (訓読み)
+              </span>
+            </div>
+          </div>
+          
           <JapaneseKeyBoard 
             @text-input="handleKeyboardInput"
-            @backspace="handleKeyboardBackspace"
+            @clear="handleKeyboardClear"
             @close="closeKeyboard"
           />
         </div>

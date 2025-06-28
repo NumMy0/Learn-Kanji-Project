@@ -10,10 +10,11 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['text-input', 'backspace', 'close']);
+const emit = defineEmits(['text-input', 'clear', 'close']);
 
 const currentMode = ref('hiragana');
 const currentInputText = ref('');
+const valorInput = ref('');
 
 // Datos de los caracteres Hiragana organizados por filas
 const hiraganaVocals = ['あ', 'い', 'う', 'え', 'お'];
@@ -74,12 +75,12 @@ const handleKeyPress = (char) => {
 
 /**
  * Elimina el último carácter del texto de entrada.
+ * @returns {void}
  */
-const handleBackspace = () => {
-  if (currentInputText.value.length > 0) {
-    currentInputText.value = currentInputText.value.slice(0, -1);
-  }
-  emit('backspace');
+
+const handleClear = () => {
+  currentInputText.value = '';
+  emit('clear');
 };
 
 /**
@@ -183,7 +184,7 @@ const applySpecialChar = (type) => {
       <div class="flex justify-center gap-1 mt-2">
         <KeyButton char="っ" @click="handleKeyPress('っ')" :buttonClass="'btn-3d-green-light text-xs'" />
         <KeyButton char="ん" @click="handleKeyPress('ん')" :buttonClass="'btn-3d-green-light text-xs'" />
-        <KeyButton char="⌫" @click="handleBackspace()" :buttonClass="'btn-3d-danger text-xs'" />
+        <KeyButton char="Clear" @click="handleClear()" :buttonClass="'btn-3d-danger text-xs'" />
       </div>
     </div>
   </div>
