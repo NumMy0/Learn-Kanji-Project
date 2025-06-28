@@ -131,15 +131,6 @@ const applySpecialChar = (type) => {
       </button>
     </div>
 
-    <!-- Input de vista previa -->
-    <input
-      type="text"
-      :value="currentInputText"
-      readonly
-      class="w-full p-2 text-lg border border-timberWolf rounded-lg text-left bg-snow resize-none min-h-[40px] font-['Arial_Unicode_MS','Meiryo','Yu_Gothic']"
-      placeholder="Vista previa..."
-    />
-
     <!-- Botones de modo -->
     <div class="flex justify-center gap-2 mb-2">
       <button
@@ -190,12 +181,9 @@ const applySpecialChar = (type) => {
       </div>
 
       <div class="flex justify-center gap-1 mt-2">
-        <KeyButton char="゛" @click="applySpecialChar('dakuten')" :buttonClass="'btn-3d-green-light text-xs'" />
-        <KeyButton char="゜" @click="applySpecialChar('handakuten')" :buttonClass="'btn-3d-green-light text-xs'" />
         <KeyButton char="っ" @click="handleKeyPress('っ')" :buttonClass="'btn-3d-green-light text-xs'" />
         <KeyButton char="ん" @click="handleKeyPress('ん')" :buttonClass="'btn-3d-green-light text-xs'" />
         <KeyButton char="⌫" @click="handleBackspace()" :buttonClass="'btn-3d-danger text-xs'" />
-        <KeyButton char="␣" @click="handleKeyPress(' ')" :buttonClass="'btn-3d-green-primary text-xs flex-grow'" />
       </div>
     </div>
   </div>

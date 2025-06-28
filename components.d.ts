@@ -10,7 +10,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     JapaneseKeyBoard: typeof import('./src/components/JapaneseKeyBoard.vue')['default']
     KanjiCard: typeof import('./src/components/KanjiCard.vue')['default']
-    KanjiCard_backup: typeof import('./src/components/KanjiCard_backup.vue')['default']
     KeyButton: typeof import('./src/components/KeyButton.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

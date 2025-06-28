@@ -14,10 +14,14 @@ const props = defineProps({
         type: String,
         required: true
     },
-    CorrectReading: {
+    CorrectReadingOn: {
         type: String,
         required: true
     },
+    CorrectReadingKun: {
+        type: String,
+        required: true
+    }
 });
 
 const userInput = ref('');
@@ -28,6 +32,7 @@ const maxAttempts = 3;
 const showHint = ref(false);
 const studyMode = ref(false);
 const showKeyboard = ref(false);
+const matchedReadingType = ref('');
 
 // Computed para mostrar el progreso
 const progressPercent = computed(() => {
@@ -46,10 +51,24 @@ const validateAnswer = () => {
     
     attempts.value++;
     const userAnswer = normalizeText(userInput.value);
-    const correctAnswer = normalizeText(props.CorrectReading);
+    const correctAnswerOn = normalizeText(props.CorrectReadingOn);
+    const correctAnswerKun = normalizeText(props.CorrectReadingKun);
     
-    if (userAnswer === correctAnswer) {
+    // Separar la respuesta del usuario por espacios o comas para obtener múltiples lecturas
+    const userReadings = userAnswer.split(/[,\s]+/).filter(reading => reading.length > 0);
+    
+    // Verificar que el usuario haya proporcionado ambas lecturas
+    const hasOnReading = userReadings.some(reading => reading === correctAnswerOn);
+    const hasKunReading = userReadings.some(reading => reading === correctAnswerKun);
+    
+    if (hasOnReading && hasKunReading) {
+        matchedReadingType.value = 'ambas lecturas (On y Kun)';
         isCorrect.value = true;
+    } else {
+        isCorrect.value = false;
+    }
+    
+    if (isCorrect.value) {
         showAnswer.value = true;
         
         // Animar éxito
@@ -85,6 +104,7 @@ const resetCard = () => {
     attempts.value = 0;
     showHint.value = false;
     studyMode.value = false;
+    matchedReadingType.value = '';
 };
 
 // Función para alternar modo estudio
@@ -99,9 +119,14 @@ const toggleStudyMode = () => {
 
 // Función para obtener una pista
 const getHint = () => {
-    const reading = props.CorrectReading;
-    const hintLength = Math.ceil(reading.length / 2);
-    return reading.substring(0, hintLength) + '...';
+    // Mostrar ambas lecturas como pista, pero parcialmente
+    const onReading = props.CorrectReadingOn || '';
+    const kunReading = props.CorrectReadingKun || '';
+    
+    const onHint = onReading ? onReading.substring(0, Math.ceil(onReading.length / 2)) + '...' : '';
+    const kunHint = kunReading ? kunReading.substring(0, Math.ceil(kunReading.length / 2)) + '...' : '';
+    
+    return `On: ${onHint}, Kun: ${kunHint}`;
 };
 
 // Funciones para el teclado japonés
@@ -226,17 +251,35 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Lectura (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
-              <div v-if="studyMode || showAnswer" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-FernGreen">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 bg-FernGreen rounded-lg flex items-center justify-center">
-                    <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z"></path>
-                    </svg>
+              <!-- Lecturas (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
+              <div v-if="studyMode || showAnswer" class="space-y-3">
+                <!-- Lectura On -->
+                <div v-if="CorrectReadingOn" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-FernGreen">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-FernGreen rounded-lg flex items-center justify-center">
+                      <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-azulIndigo">Lectura On (音読み)</p>
+                      <p class="text-lg font-semibold text-grisTinta">{{ CorrectReadingOn }}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p class="text-sm font-medium text-azulIndigo">Lectura</p>
-                    <p class="text-lg font-semibold text-grisTinta">{{ CorrectReading }}</p>
+                </div>
+                
+                <!-- Lectura Kun -->
+                <div v-if="CorrectReadingKun" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-HunterGreen">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-HunterGreen rounded-lg flex items-center justify-center">
+                      <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-azulIndigo">Lectura Kun (訓読み)</p>
+                      <p class="text-lg font-semibold text-grisTinta">{{ CorrectReadingKun }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -253,20 +296,20 @@ onMounted(() => {
                   </svg>
                   <span class="font-medium text-firebrick">Pista</span>
                 </div>
-                <p class="text-cardinal">La lectura comienza con: <span class="font-bold">{{ getHint() }}</span></p>
+                <p class="text-cardinal">Las lecturas comienzan con: <span class="font-bold">{{ getHint() }}</span></p>
               </div>
 
               <!-- Input y validación -->
               <div v-if="!showAnswer" class="space-y-4">
                 <div>
                   <label class="block text-sm font-medium text-grisTinta mb-2">
-                    ¿Cuál es la lectura de este kanji?
+                    Escribe ambas lecturas del kanji (On y Kun, separadas por coma o espacio)
                   </label>
                   <input
                     v-model="userInput"
                     @keyup.enter="validateAnswer"
                     type="text"
-                    placeholder="Escribe la lectura aquí..."
+                    placeholder="Ej: きょう, おし.える"
                     class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-MossGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                     :class="{ 'border-cardinal bg-coquelicot/10': isCorrect === false }"
                   >
@@ -290,7 +333,10 @@ onMounted(() => {
                     </svg>
                   </div>
                   <h3 class="text-2xl font-bold text-FernGreen mb-2">¡Correcto!</h3>
-                  <p class="text-grisTinta">Has acertado en {{ attempts }} {{ attempts === 1 ? 'intento' : 'intentos' }}</p>
+                  <div class="text-grisTinta space-y-1">
+                    <p>Has acertado {{ matchedReadingType }}</p>
+                    <p>en {{ attempts }} {{ attempts === 1 ? 'intento' : 'intentos' }}</p>
+                  </div>
                 </div>
                 
                 <div v-else class="error-shake">
@@ -300,7 +346,14 @@ onMounted(() => {
                     </svg>
                   </div>
                   <h3 class="text-2xl font-bold text-cardinal mb-2">Incorrecto</h3>
-                  <p class="text-grisTinta">La respuesta correcta es: <span class="font-bold text-cardinal">{{ CorrectReading }}</span></p>
+                  <div class="text-grisTinta space-y-1">
+                    <p>Necesitas escribir ambas lecturas correctas:</p>
+                    <div class="space-y-1">
+                      <p><span class="font-bold text-cardinal">On: {{ CorrectReadingOn }}</span></p>
+                      <p><span class="font-bold text-cardinal">Kun: {{ CorrectReadingKun }}</span></p>
+                    </div>
+                    <p class="text-sm mt-2">Sepáralas con coma o espacio</p>
+                  </div>
                 </div>
 
                 <button
