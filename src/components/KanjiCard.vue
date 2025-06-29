@@ -44,14 +44,49 @@ const progressPercent = computed(() => {
     return Math.min((attempts.value / maxAttempts) * 100, 100);
 });
 
+// Computed para verificar si los datos del kanji están disponibles
+const kanjiDataAvailable = computed(() => {
+    return props.CorrectMeaning && 
+           props.CorrectReadingOn && 
+           props.CorrectReadingKun &&
+           !props.CorrectMeaning.includes('no disponible') &&
+           !props.CorrectReadingOn.includes('no disponible') &&
+           !props.CorrectReadingKun.includes('no disponible');
+});
+
+// Computed para verificar si se puede validar la respuesta
+const canValidateAnswer = computed(() => {
+    return userInputMeaning.value.trim() && 
+           userInputOn.value.trim() && 
+           userInputKun.value.trim() && 
+           kanjiDataAvailable.value;
+});
+
 // Función para normalizar respuestas (eliminar espacios, convertir a minúsculas)
 const normalizeText = (text) => {
+    if (!text || typeof text !== 'string') return '';
     return text.toLowerCase().trim().replace(/\s+/g, '');
 };
 
 // Función para validar la respuesta
 const validateAnswer = () => {
+    // Verificar que tenemos inputs del usuario
     if (!userInputMeaning.value.trim() || !userInputOn.value.trim() || !userInputKun.value.trim()) return;
+    
+    // Verificar que tenemos las respuestas correctas válidas
+    if (!props.CorrectMeaning || 
+        !props.CorrectReadingOn || 
+        !props.CorrectReadingKun ||
+        props.CorrectMeaning.includes('no disponible') ||
+        props.CorrectReadingOn.includes('no disponible') ||
+        props.CorrectReadingKun.includes('no disponible')) {
+        console.error('Datos del kanji incompletos o no disponibles para validar la respuesta');
+        // Mostrar un mensaje de error al usuario
+        isCorrect.value = false;
+        matchedReadingType.value = 'Datos del kanji no disponibles para validación';
+        showAnswer.value = true;
+        return;
+    }
     
     attempts.value++;
     const userAnswerMeaning = normalizeText(userInputMeaning.value);
@@ -151,9 +186,9 @@ const getHint = () => {
     const onReading = props.CorrectReadingOn || '';
     const kunReading = props.CorrectReadingKun || '';
     
-    const meaningHint = meaning ? meaning.substring(0, Math.ceil(meaning.length / 2)) + '...' : '';
-    const onHint = onReading ? onReading.substring(0, Math.ceil(onReading.length / 2)) + '...' : '';
-    const kunHint = kunReading ? kunReading.substring(0, Math.ceil(kunReading.length / 2)) + '...' : '';
+    const meaningHint = meaning ? meaning.substring(0, Math.ceil(meaning.length / 2)) + '...' : 'N/A';
+    const onHint = onReading ? onReading.substring(0, Math.ceil(onReading.length / 2)) + '...' : 'N/A';
+    const kunHint = kunReading ? kunReading.substring(0, Math.ceil(kunReading.length / 2)) + '...' : 'N/A';
     
     return `Significado: ${meaningHint}, On: ${onHint}, Kun: ${kunHint}`;
 };
@@ -412,10 +447,10 @@ onUnmounted(() => {
                 
                 <button
                   @click="validateAnswer"
-                  :disabled="!userInputMeaning.trim() || !userInputOn.trim() || !userInputKun.trim()"
+                  :disabled="!canValidateAnswer"
                   class="w-full btn-3d btn-3d-green-primary"
                 >
-                  Validar Todas las Respuestas
+                  {{ kanjiDataAvailable ? 'Validar Todas las Respuestas' : 'Datos del kanji no disponibles' }}
                 </button>
               </div>
 
@@ -478,7 +513,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Cuando hay teclado: layout lado a lado -->
-      <div v-else class="flex items-start gap-6 max-w-7xl mx-auto w-full px-4 justify-center h-full overflow-y-auto">
+      <div v-else class="flex items-start gap-6 max-w-7xl mx-auto w-full h-auto px-4 justify-center overflow-y-auto">
         <!-- Tarjeta principal -->
         <div class="kanji-card max-w-lg w-full flex-shrink-0">
           <div class="bg-Marfil backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-platinum">
@@ -631,10 +666,10 @@ onUnmounted(() => {
                 
                 <button
                   @click="validateAnswer"
-                  :disabled="!userInputMeaning.trim() || !userInputOn.trim() || !userInputKun.trim()"
+                  :disabled="!canValidateAnswer"
                   class="w-full btn-3d btn-3d-green-primary"
                 >
-                  Validar Todas las Respuestas
+                  {{ kanjiDataAvailable ? 'Validar Todas las Respuestas' : 'Datos del kanji no disponibles' }}
                 </button>
               </div>
 

@@ -171,16 +171,19 @@ export function useKanji() {
         kanjiDetails.on_readings?.length > 0
           ? kanjiDetails.on_readings[0]
           : "Lectura On no disponible";
+      console.log("Lectura On:", kanjiData.CorrectReadingOn);
 
       kanjiData.CorrectReadingKun =
         kanjiDetails.kun_readings?.length > 0
           ? kanjiDetails.kun_readings[0]
           : "Lectura Kun no disponible";
+      console.log("Lectura Kun:", kanjiData.CorrectReadingKun);
 
       const originalMeaning =
         kanjiDetails.meanings?.length > 0
           ? kanjiDetails.meanings[0]
           : "Significado no disponible";
+      console.log("Significado original:", originalMeaning);
 
       // Traducir el significado
       kanjiData.CorrectMeaning = await translateText(originalMeaning);

@@ -118,7 +118,7 @@ const applySpecialChar = (type) => {
 </script>
 
 <template>
-<div class="flex flex-col gap-3 p-4 bg-Marfil backdrop-blur-sm rounded-2xl shadow-xl border border-platinum max-w-md w-full max-h-[calc(100vh-160px)] overflow-y-auto">
+<div class="japanese-keyboard flex flex-col gap-3 p-4 bg-Marfil backdrop-blur-sm rounded-2xl shadow-xl border border-platinum max-w-md w-full max-h-[calc(100vh-370px)] overflow-y-auto">
     <!-- Header con botón de cerrar -->
     <div class="flex justify-between items-center mb-2">
       <h3 class="text-sm font-semibold text-grisTinta">Teclado Japonés</h3>
@@ -190,3 +190,42 @@ const applySpecialChar = (type) => {
   </div>
 
 </template>
+
+<style scoped>
+/* Estilos para la barra de scroll - WebKit (Chrome, Safari, Edge) */
+.japanese-keyboard::-webkit-scrollbar {
+  width: 4px;
+}
+
+.japanese-keyboard::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.japanese-keyboard::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.3);
+  border-radius: 2px;
+}
+
+.japanese-keyboard::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.5);
+}
+
+/* Estilos para Firefox */
+.japanese-keyboard {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 114, 128, 0.3) transparent;
+}
+
+/* Alternativa: Ocultar completamente la barra de scroll */
+/* Descomenta las siguientes líneas si prefieres ocultar completamente la barra */
+/*
+.japanese-keyboard::-webkit-scrollbar {
+  display: none;
+}
+
+.japanese-keyboard {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+*/
+</style>
