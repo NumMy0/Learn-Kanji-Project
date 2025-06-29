@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useMotion } from '../composables/useMotion.js';
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
@@ -25,6 +25,7 @@ const props = defineProps({
 });
 
 const userInput = ref('');
+const userInputMeaning = ref('');
 const userInputOn = ref('');
 const userInputKun = ref('');
 const showAnswer = ref(false);
@@ -35,7 +36,7 @@ const showHint = ref(false);
 const studyMode = ref(false);
 const showKeyboard = ref(false);
 const matchedReadingType = ref('');
-const activeInput = ref('on'); // 'on' o 'kun'
+const activeInput = ref('meaning'); // 'meaning', 'on' o 'kun'
 
 // Computed para mostrar el progreso
 const progressPercent = computed(() => {
@@ -50,29 +51,42 @@ const normalizeText = (text) => {
 
 // Función para validar la respuesta
 const validateAnswer = () => {
-    if (!userInputOn.value.trim() || !userInputKun.value.trim()) return;
+    if (!userInputMeaning.value.trim() || !userInputOn.value.trim() || !userInputKun.value.trim()) return;
     
     attempts.value++;
+    const userAnswerMeaning = normalizeText(userInputMeaning.value);
     const userAnswerOn = normalizeText(userInputOn.value);
     const userAnswerKun = normalizeText(userInputKun.value);
+    const correctAnswerMeaning = normalizeText(props.CorrectMeaning);
     const correctAnswerOn = normalizeText(props.CorrectReadingOn);
     const correctAnswerKun = normalizeText(props.CorrectReadingKun);
     
-    // Verificar cuáles lecturas son correctas
+    // Verificar cuáles respuestas son correctas
+    const meaningCorrect = userAnswerMeaning === correctAnswerMeaning;
     const onCorrect = userAnswerOn === correctAnswerOn;
     const kunCorrect = userAnswerKun === correctAnswerKun;
     
-    if (onCorrect && kunCorrect) {
-        matchedReadingType.value = 'ambas lecturas (On y Kun)';
+    if (meaningCorrect && onCorrect && kunCorrect) {
+        matchedReadingType.value = 'todas las respuestas (significado, On y Kun)';
         isCorrect.value = true;
     } else {
         // Guardar información sobre qué está incorrecto para mostrar feedback específico
-        if (onCorrect && !kunCorrect) {
-            matchedReadingType.value = 'lectura On correcta, pero Kun incorrecta';
-        } else if (!onCorrect && kunCorrect) {
-            matchedReadingType.value = 'lectura Kun correcta, pero On incorrecta';
+        const correctAnswers = [];
+        const incorrectAnswers = [];
+        
+        if (meaningCorrect) correctAnswers.push('significado');
+        else incorrectAnswers.push('significado');
+        
+        if (onCorrect) correctAnswers.push('lectura On');
+        else incorrectAnswers.push('lectura On');
+        
+        if (kunCorrect) correctAnswers.push('lectura Kun');
+        else incorrectAnswers.push('lectura Kun');
+        
+        if (correctAnswers.length > 0) {
+            matchedReadingType.value = `${correctAnswers.join(' y ')} correcta${correctAnswers.length > 1 ? 's' : ''}, pero ${incorrectAnswers.join(' y ')} incorrecta${incorrectAnswers.length > 1 ? 's' : ''}`;
         } else {
-            matchedReadingType.value = 'ambas lecturas incorrectas';
+            matchedReadingType.value = 'todas las respuestas incorrectas';
         }
         isCorrect.value = false;
     }
@@ -108,6 +122,7 @@ const validateAnswer = () => {
 // Función para resetear el estado
 const resetCard = () => {
     userInput.value = '';
+    userInputMeaning.value = '';
     userInputOn.value = '';
     userInputKun.value = '';
     showAnswer.value = false;
@@ -116,7 +131,7 @@ const resetCard = () => {
     showHint.value = false;
     studyMode.value = false;
     matchedReadingType.value = '';
-    activeInput.value = 'on';
+    activeInput.value = 'meaning';
 };
 
 // Función para alternar modo estudio
@@ -131,19 +146,23 @@ const toggleStudyMode = () => {
 
 // Función para obtener una pista
 const getHint = () => {
-    // Mostrar ambas lecturas como pista, pero parcialmente
+    // Mostrar todas las respuestas como pista, pero parcialmente
+    const meaning = props.CorrectMeaning || '';
     const onReading = props.CorrectReadingOn || '';
     const kunReading = props.CorrectReadingKun || '';
     
+    const meaningHint = meaning ? meaning.substring(0, Math.ceil(meaning.length / 2)) + '...' : '';
     const onHint = onReading ? onReading.substring(0, Math.ceil(onReading.length / 2)) + '...' : '';
     const kunHint = kunReading ? kunReading.substring(0, Math.ceil(kunReading.length / 2)) + '...' : '';
     
-    return `On: ${onHint}, Kun: ${kunHint}`;
+    return `Significado: ${meaningHint}, On: ${onHint}, Kun: ${kunHint}`;
 };
 
 // Funciones para el teclado japonés
 const handleKeyboardInput = (char) => {
-    if (activeInput.value === 'on') {
+    if (activeInput.value === 'meaning') {
+        userInputMeaning.value += char;
+    } else if (activeInput.value === 'on') {
         userInputOn.value += char;
     } else {
         userInputKun.value += char;
@@ -151,7 +170,9 @@ const handleKeyboardInput = (char) => {
 };
 
 const handleKeyboardClear = () => {
-    if (activeInput.value === 'on') {
+    if (activeInput.value === 'meaning') {
+        userInputMeaning.value = '';
+    } else if (activeInput.value === 'on') {
         userInputOn.value = '';
     } else {
         userInputKun.value = '';
@@ -170,6 +191,15 @@ const closeKeyboard = () => {
     showKeyboard.value = false;
 };
 
+// Prevenir scroll cuando el teclado está abierto
+watch(showKeyboard, (newVal) => {
+    if (newVal) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+});
+
 onMounted(() => {
     // Animar la entrada de la card
     animateIn('.kanji-card', {
@@ -181,13 +211,18 @@ onMounted(() => {
     });
 });
 
+// Limpiar el overflow cuando el componente se desmonte
+onUnmounted(() => {
+    document.body.style.overflow = '';
+});
+
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-background to-grisTinta p-4">
+  <div class="h-screen bg-gradient-to-br from-background to-grisTinta p-4 overflow-hidden">
     
-    <!-- Contenedor de botones superiores -->
-    <div class="fixed top-6 left-6 right-6 z-20 flex justify-between items-center pointer-events-none">
+    <!-- Contenedor de botones superiores - todos a la izquierda -->
+    <div class="fixed top-6 left-6 z-20 flex gap-3 items-center pointer-events-none">
       <!-- Botón de regreso -->
       <router-link 
         to="/" 
@@ -198,35 +233,32 @@ onMounted(() => {
         </svg>
       </router-link>
 
-      <!-- Botones de la derecha -->
-      <div class="flex gap-3 pointer-events-auto">
-        <!-- Botón de teclado japonés -->
-        <button
-          @click="toggleKeyboard"
-          class="btn-3d btn-3d-green-floating gap-2"
-          :class="{ 'bg-MossGreen text-snow': showKeyboard }"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2zm0 0l7 5 7-5"></path>
-          </svg>
-          キーボード
-        </button>
+      <!-- Botón de teclado japonés -->
+      <button
+        @click="toggleKeyboard"
+        class="btn-3d btn-3d-green-floating gap-2 pointer-events-auto"
+        :class="{ 'bg-MossGreen text-snow': showKeyboard }"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2zm0 0l7 5 7-5"></path>
+        </svg>
+        キーボード
+      </button>
 
-        <!-- Botón de modo estudio -->
-        <button
-          @click="toggleStudyMode"
-          class="btn-3d btn-3d-green-floating gap-2"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-          </svg>
-          {{ studyMode ? 'Practicar' : 'Estudiar' }}
-        </button>
-      </div>
+      <!-- Botón de modo estudio -->
+      <button
+        @click="toggleStudyMode"
+        class="btn-3d btn-3d-green-floating gap-2 pointer-events-auto"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+        </svg>
+        {{ studyMode ? 'Practicar' : 'Estudiar' }}
+      </button>
     </div>
 
     <!-- Contenedor principal -->
-    <div class="flex items-center justify-center min-h-screen transition-all duration-300">
+    <div class="flex items-center justify-center h-full pt-20 transition-all duration-300">
       <!-- Cuando no hay teclado: centrado completo -->
       <div v-if="!showKeyboard" class="flex justify-center w-full px-4">
         <div class="kanji-card max-w-lg w-full">
@@ -257,8 +289,8 @@ onMounted(() => {
 
             <!-- Información del kanji -->
             <div class="space-y-4 mb-6">
-              <!-- Significado -->
-              <div class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
+              <!-- Significado (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
+              <div v-if="studyMode || showAnswer" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 bg-MossGreen rounded-lg flex items-center justify-center">
                     <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,10 +352,27 @@ onMounted(() => {
                 <p class="text-cardinal">Las lecturas comienzan con: <span class="font-bold">{{ getHint() }}</span></p>
               </div>
 
-              <!-- Input y validación -->
+              <!-- Inputs para las respuestas (siempre visibles) -->
               <div v-if="!showAnswer" class="space-y-4">
-                <!-- Inputs para las lecturas -->
                 <div class="space-y-4">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-grisTinta">
+                      Significado
+                    </label>
+                    <input
+                      v-model="userInputMeaning"
+                      @focus="setActiveInput('meaning')"
+                      @keyup.enter="validateAnswer"
+                      type="text"
+                      placeholder="Escribe el significado..."
+                      class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-MossGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
+                      :class="{ 
+                        'border-cardinal bg-coquelicot/10': isCorrect === false,
+                        'ring-2 ring-MossGreen border-MossGreen': activeInput === 'meaning' 
+                      }"
+                    >
+                  </div>
+                  
                   <div class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Lectura On (音読み)
@@ -337,7 +386,7 @@ onMounted(() => {
                       class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-FernGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                       :class="{ 
                         'border-cardinal bg-coquelicot/10': isCorrect === false,
-                        'ring-2 ring-FernGreen border-FernGreen': activeInput === 'on' && showKeyboard 
+                        'ring-2 ring-FernGreen border-FernGreen': activeInput === 'on' 
                       }"
                     >
                   </div>
@@ -355,7 +404,7 @@ onMounted(() => {
                       class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-HunterGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                       :class="{ 
                         'border-cardinal bg-coquelicot/10': isCorrect === false,
-                        'ring-2 ring-HunterGreen border-HunterGreen': activeInput === 'kun' && showKeyboard 
+                        'ring-2 ring-HunterGreen border-HunterGreen': activeInput === 'kun' 
                       }"
                     >
                   </div>
@@ -363,10 +412,10 @@ onMounted(() => {
                 
                 <button
                   @click="validateAnswer"
-                  :disabled="!userInputOn.trim() || !userInputKun.trim()"
+                  :disabled="!userInputMeaning.trim() || !userInputOn.trim() || !userInputKun.trim()"
                   class="w-full btn-3d btn-3d-green-primary"
                 >
-                  Validar Ambas Lecturas
+                  Validar Todas las Respuestas
                 </button>
               </div>
 
@@ -395,6 +444,7 @@ onMounted(() => {
                   <div class="text-grisTinta space-y-2">
                     <p class="text-cardinal font-medium">{{ matchedReadingType }}</p>
                     <div class="space-y-1">
+                      <p><span class="font-bold text-cardinal">Significado correcto: {{ CorrectMeaning }}</span></p>
                       <p><span class="font-bold text-cardinal">On correcta: {{ CorrectReadingOn }}</span></p>
                       <p><span class="font-bold text-cardinal">Kun correcta: {{ CorrectReadingKun }}</span></p>
                     </div>
@@ -428,7 +478,7 @@ onMounted(() => {
       </div>
 
       <!-- Cuando hay teclado: layout lado a lado -->
-      <div v-else class="flex items-start gap-6 max-w-7xl mx-auto w-full px-4 justify-center">
+      <div v-else class="flex items-start gap-6 max-w-7xl mx-auto w-full px-4 justify-center h-full overflow-y-auto">
         <!-- Tarjeta principal -->
         <div class="kanji-card max-w-lg w-full flex-shrink-0">
           <div class="bg-Marfil backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-platinum">
@@ -458,8 +508,8 @@ onMounted(() => {
 
             <!-- Información del kanji -->
             <div class="space-y-4 mb-6">
-              <!-- Significado -->
-              <div class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
+              <!-- Significado (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
+              <div v-if="studyMode || showAnswer" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 bg-MossGreen rounded-lg flex items-center justify-center">
                     <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -521,10 +571,27 @@ onMounted(() => {
                 <p class="text-cardinal">Las lecturas comienzan con: <span class="font-bold">{{ getHint() }}</span></p>
               </div>
 
-              <!-- Input y validación -->
+              <!-- Inputs para las respuestas (siempre visibles) -->
               <div v-if="!showAnswer" class="space-y-4">
-                <!-- Inputs para las lecturas -->
                 <div class="space-y-4">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-grisTinta">
+                      Significado
+                    </label>
+                    <input
+                      v-model="userInputMeaning"
+                      @focus="setActiveInput('meaning')"
+                      @keyup.enter="validateAnswer"
+                      type="text"
+                      placeholder="Escribe el significado..."
+                      class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-MossGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
+                      :class="{ 
+                        'border-cardinal bg-coquelicot/10': isCorrect === false,
+                        'ring-2 ring-MossGreen border-MossGreen': activeInput === 'meaning' 
+                      }"
+                    >
+                  </div>
+                  
                   <div class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Lectura On (音読み)
@@ -538,7 +605,7 @@ onMounted(() => {
                       class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-FernGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                       :class="{ 
                         'border-cardinal bg-coquelicot/10': isCorrect === false,
-                        'ring-2 ring-FernGreen border-FernGreen': activeInput === 'on' && showKeyboard 
+                        'ring-2 ring-FernGreen border-FernGreen': activeInput === 'on' 
                       }"
                     >
                   </div>
@@ -556,7 +623,7 @@ onMounted(() => {
                       class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-HunterGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                       :class="{ 
                         'border-cardinal bg-coquelicot/10': isCorrect === false,
-                        'ring-2 ring-HunterGreen border-HunterGreen': activeInput === 'kun' && showKeyboard 
+                        'ring-2 ring-HunterGreen border-HunterGreen': activeInput === 'kun' 
                       }"
                     >
                   </div>
@@ -564,10 +631,10 @@ onMounted(() => {
                 
                 <button
                   @click="validateAnswer"
-                  :disabled="!userInputOn.trim() || !userInputKun.trim()"
+                  :disabled="!userInputMeaning.trim() || !userInputOn.trim() || !userInputKun.trim()"
                   class="w-full btn-3d btn-3d-green-primary"
                 >
-                  Validar Ambas Lecturas
+                  Validar Todas las Respuestas
                 </button>
               </div>
 
@@ -596,6 +663,7 @@ onMounted(() => {
                   <div class="text-grisTinta space-y-2">
                     <p class="text-cardinal font-medium">{{ matchedReadingType }}</p>
                     <div class="space-y-1">
+                      <p><span class="font-bold text-cardinal">Significado correcto: {{ CorrectMeaning }}</span></p>
                       <p><span class="font-bold text-cardinal">On correcta: {{ CorrectReadingOn }}</span></p>
                       <p><span class="font-bold text-cardinal">Kun correcta: {{ CorrectReadingKun }}</span></p>
                     </div>
@@ -625,29 +693,10 @@ onMounted(() => {
             </div>
 
           </div>
-        </div>>
+        </div>
 
         <!-- Teclado japonés al costado -->
         <div v-if="showKeyboard" class="flex-shrink-0">
-          <!-- Indicador del input activo -->
-          <div class="mb-3 p-2 bg-platinum rounded-lg border border-timberWolf">
-            <p class="text-xs font-medium text-grisTinta mb-1">Escribiendo en:</p>
-            <div class="flex gap-2">
-              <span 
-                :class="activeInput === 'on' ? 'bg-FernGreen text-snow' : 'bg-GrisNeutro text-grisTinta'"
-                class="px-2 py-1 rounded text-xs font-medium transition-colors"
-              >
-                On (音読み)
-              </span>
-              <span 
-                :class="activeInput === 'kun' ? 'bg-HunterGreen text-snow' : 'bg-GrisNeutro text-grisTinta'"
-                class="px-2 py-1 rounded text-xs font-medium transition-colors"
-              >
-                Kun (訓読み)
-              </span>
-            </div>
-          </div>
-          
           <JapaneseKeyBoard 
             @text-input="handleKeyboardInput"
             @clear="handleKeyboardClear"

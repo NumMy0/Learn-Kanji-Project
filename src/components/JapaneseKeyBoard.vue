@@ -118,7 +118,7 @@ const applySpecialChar = (type) => {
 </script>
 
 <template>
-<div class="flex flex-col gap-3 p-4 bg-Marfil backdrop-blur-sm rounded-2xl shadow-xl border border-platinum max-w-md w-full">
+<div class="flex flex-col gap-3 p-4 bg-Marfil backdrop-blur-sm rounded-2xl shadow-xl border border-platinum max-w-md w-full max-h-[calc(100vh-160px)] overflow-y-auto">
     <!-- Header con botón de cerrar -->
     <div class="flex justify-between items-center mb-2">
       <h3 class="text-sm font-semibold text-grisTinta">Teclado Japonés</h3>
@@ -184,7 +184,7 @@ const applySpecialChar = (type) => {
       <div class="flex justify-center gap-1 mt-2">
         <KeyButton char="っ" @click="handleKeyPress('っ')" :buttonClass="'btn-3d-green-light text-xs'" />
         <KeyButton char="ん" @click="handleKeyPress('ん')" :buttonClass="'btn-3d-green-light text-xs'" />
-        <KeyButton char="Clear" @click="handleClear()" :buttonClass="'btn-3d-danger text-xs'" />
+        <KeyButton char="Limpiar" @click="handleClear()" :buttonClass="'btn-3d-danger text-xs'" />
       </div>
     </div>
   </div>
