@@ -3,10 +3,12 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMotion } from '../composables/useMotion.js';
 import { useKanji } from '../composables/useKanji.js';
+import { useSounds } from '../composables/useSounds.js';
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
 const { animateIn } = useMotion();
 const route = useRoute();
+const { playButtonClick, playCorrectAnswer, playIncorrectAnswer, soundEnabled, toggleSound } = useSounds();
 const { 
     sublevelData, 
     navigationData,
@@ -64,6 +66,7 @@ const isInSublevelMode = computed(() => {
 
 // Funciones de navegación
 const goToNextKanjiManual = async () => {
+    playButtonClick();
     try {
         loadingNavigation.value = true;
         await goToNextKanji();
@@ -76,6 +79,7 @@ const goToNextKanjiManual = async () => {
 };
 
 const goToPreviousKanjiAction = async () => {    
+    playButtonClick();
     try {
         loadingNavigation.value = true;
         await goToPreviousKanji();
@@ -88,6 +92,7 @@ const goToPreviousKanjiAction = async () => {
 };
 
 const goToRandomKanjiManual = async () => {
+    playButtonClick();
     try {
         loadingNavigation.value = true;
         await goToRandomKanji();
@@ -201,6 +206,9 @@ const normalizeText = (text) => {
 
 // Función para validar la respuesta
 const validateAnswer = () => {
+    // Reproducir sonido de clic del botón
+    playButtonClick();
+    
     // Verificar que tenemos al menos un campo disponible
     const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
     if (!hasAvailableData) {
@@ -291,6 +299,9 @@ const validateAnswer = () => {
     if (isCorrect.value) {
         showAnswer.value = true;
         
+        // Reproducir sonido de respuesta correcta
+        playCorrectAnswer();
+        
         // Animar éxito
         animateIn('.success-animation', {
             scale: [0.8, 1.2, 1],
@@ -300,6 +311,9 @@ const validateAnswer = () => {
         });
     } else {
         isCorrect.value = false;
+        
+        // Reproducir sonido de respuesta incorrecta
+        playIncorrectAnswer();
         
         if (attempts.value >= maxAttempts) {
             showAnswer.value = true;
@@ -318,6 +332,7 @@ const validateAnswer = () => {
 
 // Función para resetear el estado
 const resetCard = () => {
+    playButtonClick();
     userInput.value = '';
     userInputMeaning.value = '';
     userInputOn.value = '';
@@ -343,6 +358,7 @@ const resetCard = () => {
 
 // Función para alternar modo estudio
 const toggleStudyMode = () => {
+    playButtonClick();
     studyMode.value = !studyMode.value;
     if (studyMode.value) {
         showAnswer.value = true;
@@ -398,6 +414,7 @@ const setActiveInput = (inputType) => {
 };
 
 const toggleKeyboard = () => {
+    playButtonClick();
     showKeyboard.value = !showKeyboard.value;
 };
 
@@ -468,6 +485,23 @@ onUnmounted(() => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
         </svg>
         {{ studyMode ? 'Practicar' : 'Estudiar' }}
+      </button>
+    </div>
+
+    <!-- Indicador de sonido (esquina superior derecha) -->
+    <div class="fixed top-6 right-6 z-20">
+      <button
+        @click="() => { toggleSound(); playButtonClick(); }"
+        class="btn-3d btn-3d-green-floating w-12 h-12 flex items-center justify-center pointer-events-auto"
+        :title="soundEnabled ? 'Sonido activado - Click para desactivar' : 'Sonido desactivado - Click para activar'"
+      >
+        <svg v-if="soundEnabled" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 5l7.5 7.5V3M6.343 3.343a9 9 0 000 12.728m-2.828-2.828a5 5 0 000-7.072M3 12a9 9 0 009 9 9 9 0 009-9"></path>
+        </svg>
+        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+        </svg>
       </button>
     </div>
 

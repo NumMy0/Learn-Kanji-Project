@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { useSounds } from '../composables/useSounds.js';
 import KeyButton from './KeyButton.vue';
 
 // Definir las props y eventos que emite este componente
@@ -11,6 +12,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['text-input', 'clear', 'close']);
+
+const { playKeyboardKey, playButtonClick } = useSounds();
 
 const currentMode = ref('hiragana');
 const currentInputText = ref('');
@@ -69,6 +72,7 @@ const handakutenMap = {
  * @param {string} char - El carácter a añadir.
  */
 const handleKeyPress = (char) => {
+  playKeyboardKey();
   currentInputText.value += char;
   emit('text-input', char);
 };
@@ -79,6 +83,7 @@ const handleKeyPress = (char) => {
  */
 
 const handleClear = () => {
+  playButtonClick();
   currentInputText.value = '';
   emit('clear');
 };
@@ -88,6 +93,7 @@ const handleClear = () => {
  * @param {string} mode - El nuevo modo ('hiragana' o 'katakana').
  */
 const changeMode = (mode) => {
+  playButtonClick();
   currentMode.value = mode;
 };
 
@@ -123,7 +129,7 @@ const applySpecialChar = (type) => {
     <div class="flex justify-between items-center mb-2">
       <h3 class="text-sm font-semibold text-grisTinta">Teclado Japonés</h3>
       <button
-        @click="emit('close')"
+        @click="() => { playButtonClick(); emit('close'); }"
         class="btn-3d btn-3d-danger text-xs px-2 py-1"
       >
         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
