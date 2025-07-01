@@ -1,24 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --color-background: #121212;
-  --color-text: #EDEDED;
+  /* Variables base de colores - no cambian */
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+  --color-snow: #FFF9FB;
+  --color-Marfil: #FFF8F0;
   --color-timberWolf: #CED0CE;
   --color-platinum: #E6E8E6;
+  --color-GrisNeutro: #DADADA;
   --color-coquelicot: #F15025;
   --color-cardinal: #AD343E;
-  --color-black: #000000;
-  --color-airForceBlue: #4B88A2;
   --color-firebrick: #BB0A21;
-  --color-snow: #FFF9FB;
   --color-RojoCarmesi: #D72638;
-  --color-Marfil: #FFF8F0;
+  --color-Benibana: #E63946;
   --color-azulIndigo: #264653;
   --color-verdeMatcha: #A8C686;
-  --color-GrisNeutro: #DADADA;
-  --color-grisTinta: #1E1E1E;
-  --color-Benibana: #E63946;
-  --color-GrisTintaClaro: #353535;
   --color-Aonobi: #5C7080;
   --color-DarkGreen: #132A13;
   --color-HunterGree: #31572C;
@@ -36,7 +33,90 @@
   --color-HunterGreen: #4B644A;
   --color-BruswickGreen: #14453D;
   --color-MyrtleGreen: #3D7068;
+  
+  /* Colores azules */
+  --color-YaleBlue: #0D3B66;
+  --color-airForceBlue: #4B88A2;
+  --color-CornFlowerBlue: #5C95FF;
+  --color-uranianBlue: #B9E6FF;
+  --color-Moonstone: #009FB7;
+  --color-TiffanyBlue: #84DCCF; 
+  --color-ElectricBlue: #7EE8FA;
+  --color-NonPhotoBlue: #92D5E6;
+  --color-SkyBlue: #96C9DC;
+  --color-OxfordBlue: #061A40;
+  --color-SapphireBlue: #0353A4;
+  --color-BiceBlue: #006DAA;
+  --color-PrussianBlue: #003559;
+  --color-ColumbianBlue: #B9D6F2;
+  --color-Celeste: #C4FFF9;
+  --color-Azul: #246EB9;
+  --color-GreenBlue: #2364AA;
+  --color-PictonBlue: #3DA5D9;
+  --color-SteelBlue: #4381C1;
+  --color-Gunmetal: #143642;
+  
+  /* Colores oscuros para modo oscuro */
+  --color-DimGray: #272727;
+  --color-jet: #312F2F;
+  --color-Night: #090C08; 
+  --color-EerieBlack: #191919;
+  --color-RichBlack: #0D1821;
+  --color-SpaceCadet: #1B1F3B;
+  --color-EerieBlackAlt: #1D1E18;
+  --color-grisTinta: #1E1E1E;
+  --color-GrisTintaClaro: #353535;
+  --color-background: #121212;
+}
 
+/* Tema claro (por defecto) */
+:root {
+  --theme-background: var(--color-snow);
+  --theme-background-alt: var(--color-Marfil);
+  --theme-background-secondary: var(--color-teaGreen);
+  --theme-surface: var(--color-platinum);
+  --theme-surface-alt: var(--color-timberWolf);
+  --theme-text-primary: var(--color-grisTinta);
+  --theme-text-secondary: var(--color-FernGreen);
+  --theme-text-accent: var(--color-DarkGreen);
+  --theme-border: var(--color-MossGreen);
+  --theme-border-light: var(--color-teaGreen);
+  --theme-shadow: rgba(19, 42, 19, 0.1);
+  --theme-overlay: rgba(230, 232, 230, 0.9);
+}
+
+/* Tema oscuro */
+[data-theme="dark"] {
+  --theme-background: var(--color-RichBlack);
+  --theme-background-alt: var(--color-grisTinta);
+  --theme-background-secondary: var(--color-SpaceCadet);
+  --theme-surface: var(--color-DimGray);
+  --theme-surface-alt: var(--color-jet);
+  --theme-text-primary: var(--color-snow);
+  --theme-text-secondary: var(--color-ColumbianBlue);
+  --theme-text-accent: var(--color-ElectricBlue);
+  --theme-border: var(--color-SapphireBlue);
+  --theme-border-light: var(--color-PrussianBlue);
+  --theme-shadow: rgba(9, 12, 8, 0.3);
+  --theme-overlay: rgba(13, 24, 33, 0.9);
+}
+
+/* Variables de compatibilidad para los componentes existentes */
+:root {
+  --color-text: var(--theme-text-primary);
+  
+  /* Gradientes para fondos usando variables de tema */
+  --theme-gradient-light: linear-gradient(to bottom right, var(--color-snow), var(--color-Marfil), var(--color-teaGreen));
+  --theme-gradient-dark: linear-gradient(to bottom right, var(--color-RichBlack), var(--color-grisTinta), var(--color-SpaceCadet));
+}
+
+/* Clase helper para el fondo gradiente */
+.gradient-background {
+  background: var(--theme-gradient-light);
+}
+
+[data-theme="dark"] .gradient-background {
+  background: var(--theme-gradient-dark);
 }
 
 /* Botón 3D personalizado */
@@ -1045,4 +1125,286 @@
 
 .kanji-area:hover .cursor-trail {
   background: radial-gradient(circle, var(--color-Asparagus) 0%, var(--color-Viridian) 50%, transparent 100%);
+}
+
+/* Estilos base para el modo oscuro */
+[data-theme="dark"] body {
+  background: var(--theme-background);
+  color: var(--theme-text-primary);
+}
+
+/* Fondos adaptativos */
+[data-theme="dark"] .bg-Marfil {
+  background-color: var(--theme-surface) !important;
+}
+
+[data-theme="dark"] .bg-platinum {
+  background-color: var(--theme-surface-alt) !important;
+}
+
+[data-theme="dark"] .bg-GrisNeutro {
+  background-color: var(--color-DimGray) !important;
+}
+
+[data-theme="dark"] .bg-timberWolf {
+  background-color: var(--color-jet) !important;
+}
+
+/* Textos adaptativos con paleta azul */
+[data-theme="dark"] .text-grisTinta {
+  color: var(--theme-text-primary) !important;
+}
+
+[data-theme="dark"] .text-FernGreen {
+  color: var(--color-ColumbianBlue) !important;
+}
+
+[data-theme="dark"] .text-DarkGreen {
+  color: var(--color-ElectricBlue) !important;
+}
+
+[data-theme="dark"] .text-HunterGree {
+  color: var(--color-NonPhotoBlue) !important;
+}
+
+[data-theme="dark"] .text-MossGreen {
+  color: var(--color-SkyBlue) !important;
+}
+
+[data-theme="dark"] .text-Aonobi {
+  color: var(--color-uranianBlue) !important;
+}
+
+[data-theme="dark"] .text-azulIndigo {
+  color: var(--color-TiffanyBlue) !important;
+}
+
+/* Bordes adaptativos */
+[data-theme="dark"] .border-MossGreen {
+  border-color: var(--color-SapphireBlue) !important;
+}
+
+[data-theme="dark"] .border-platinum {
+  border-color: var(--color-PrussianBlue) !important;
+}
+
+[data-theme="dark"] .border-FernGreen {
+  border-color: var(--color-BiceBlue) !important;
+}
+
+[data-theme="dark"] .border-HunterGree {
+  border-color: var(--color-Moonstone) !important;
+}
+
+[data-theme="dark"] .border-timberWolf {
+  border-color: var(--color-Gunmetal) !important;
+}
+
+/* Gradientes adaptativos para modo oscuro */
+[data-theme="dark"] [style*="background: linear-gradient"] {
+  background: linear-gradient(to bottom right, var(--theme-background), var(--theme-background-alt), var(--theme-background-secondary)) !important;
+}
+
+/* Botones 3D principales con paleta azul */
+[data-theme="dark"] .btn-3d-green-floating {
+  background: var(--color-SapphireBlue);
+  color: var(--theme-text-primary);
+  border-color: var(--color-PrussianBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-floating:hover {
+  background: var(--color-BiceBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-floating::before {
+  background: var(--color-PrussianBlue);
+  box-shadow: 0 0 0 2px var(--color-OxfordBlue), 0 0.625em 0 0 var(--color-Gunmetal);
+}
+
+[data-theme="dark"] .btn-3d-green-primary {
+  background: var(--color-YaleBlue);
+  color: var(--theme-text-primary);
+  border-color: var(--color-OxfordBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-primary:hover {
+  background: var(--color-SapphireBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-primary::before {
+  background: var(--color-OxfordBlue);
+  box-shadow: 0 0 0 2px var(--color-PrussianBlue), 0 0.625em 0 0 var(--color-Gunmetal);
+}
+
+[data-theme="dark"] .btn-3d-green-light {
+  background: var(--color-Gunmetal);
+  color: var(--color-ColumbianBlue);
+  border-color: var(--color-SpaceCadet);
+}
+
+[data-theme="dark"] .btn-3d-green-light:hover {
+  background: var(--color-PrussianBlue);
+  color: var(--theme-text-primary);
+}
+
+[data-theme="dark"] .btn-3d-green-light::before {
+  background: var(--color-SpaceCadet);
+  box-shadow: 0 0 0 2px var(--color-Night), 0 0.625em 0 0 var(--color-grisTinta);
+}
+
+[data-theme="dark"] .btn-3d-green-medium {
+  background: var(--color-PrussianBlue);
+  color: var(--theme-text-primary);
+  border-color: var(--color-OxfordBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-medium:hover {
+  background: var(--color-SapphireBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-medium::before {
+  background: var(--color-OxfordBlue);
+  box-shadow: 0 0 0 2px var(--color-Night), 0 0.625em 0 0 var(--color-grisTinta);
+}
+
+/* Botones de configuración especiales */
+[data-theme="dark"] .btn-3d-green-config {
+  background: var(--color-Moonstone);
+  color: var(--theme-text-primary);
+  border-color: var(--color-BiceBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-config:hover {
+  background: var(--color-TiffanyBlue);
+  color: var(--color-Night);
+}
+
+[data-theme="dark"] .btn-3d-green-config::before {
+  background: var(--color-BiceBlue);
+  box-shadow: 0 0 0 2px var(--color-SapphireBlue), 0 0.625em 0 0 var(--color-PrussianBlue);
+}
+
+/* Botones de sublevel */
+[data-theme="dark"] .btn-3d-green-sublevel {
+  background: var(--color-airForceBlue);
+  color: var(--theme-text-primary);
+  border-color: var(--color-SteelBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-sublevel:hover {
+  background: var(--color-PictonBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-sublevel::before {
+  background: var(--color-SteelBlue);
+  box-shadow: 0 0 0 2px var(--color-YaleBlue), 0 0.625em 0 0 var(--color-OxfordBlue);
+}
+
+/* Botones JLPT con variantes azules */
+[data-theme="dark"] .btn-3d-jlpt5 {
+  background: var(--color-Celeste);
+  color: var(--color-Night);
+  border-color: var(--color-TiffanyBlue);
+}
+
+[data-theme="dark"] .btn-3d-jlpt5:hover {
+  background: var(--color-ElectricBlue);
+  color: var(--color-Night);
+}
+
+[data-theme="dark"] .btn-3d-jlpt4 {
+  background: var(--color-NonPhotoBlue);
+  color: var(--color-Night);
+  border-color: var(--color-SkyBlue);
+}
+
+[data-theme="dark"] .btn-3d-jlpt4:hover {
+  background: var(--color-uranianBlue);
+  color: var(--color-Night);
+}
+
+[data-theme="dark"] .btn-3d-jlpt3 {
+  background: var(--color-airForceBlue);
+  color: var(--theme-text-primary);
+  border-color: var(--color-SteelBlue);
+}
+
+[data-theme="dark"] .btn-3d-jlpt3:hover {
+  background: var(--color-PictonBlue);
+}
+
+[data-theme="dark"] .btn-3d-jlpt2 {
+  background: var(--color-SapphireBlue);
+  color: var(--theme-text-primary);
+  border-color: var(--color-YaleBlue);
+}
+
+[data-theme="dark"] .btn-3d-jlpt2:hover {
+  background: var(--color-BiceBlue);
+}
+
+[data-theme="dark"] .btn-3d-jlpt1 {
+  background: var(--color-OxfordBlue);
+  color: var(--color-ColumbianBlue);
+  border-color: var(--color-PrussianBlue);
+}
+
+[data-theme="dark"] .btn-3d-jlpt1:hover {
+  background: var(--color-YaleBlue);
+  color: var(--theme-text-primary);
+}
+
+/* Modales en modo oscuro */
+[data-theme="dark"] .fixed.inset-0.bg-platinum {
+  background-color: var(--theme-overlay) !important;
+}
+
+[data-theme="dark"] .rounded-3xl[style*="background-color: var(--color-snow)"] {
+  background-color: var(--theme-surface) !important;
+  border-color: var(--theme-border) !important;
+}
+
+/* Elementos decorativos con paleta azul */
+[data-theme="dark"] [style*="color: var(--color-MossGreen)"] {
+  color: var(--color-SapphireBlue) !important;
+}
+
+[data-theme="dark"] [style*="color: var(--color-FernGreen)"] {
+  color: var(--color-ColumbianBlue) !important;
+}
+
+[data-theme="dark"] [style*="color: var(--color-HunterGree)"] {
+  color: var(--color-NonPhotoBlue) !important;
+}
+
+[data-theme="dark"] [style*="color: var(--color-DarkGreen)"] {
+  color: var(--color-ElectricBlue) !important;
+}
+
+/* Elementos de input y formularios */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="radio"],
+[data-theme="dark"] input[type="checkbox"] {
+  background-color: var(--theme-surface-alt);
+  border-color: var(--color-SapphireBlue);
+  color: var(--theme-text-primary);
+}
+
+[data-theme="dark"] input[type="text"]:focus {
+  border-color: var(--color-ElectricBlue);
+  box-shadow: 0 0 0 2px var(--color-SapphireBlue)40;
+}
+
+/* Scrollbars personalizadas para modo oscuro */
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-SapphireBlue);
+}
+
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--theme-surface);
+}
+
+/* Cursor trail en modo oscuro - colores azules vibrantes */
+[data-theme="dark"] .cursor-trail {
+  filter: brightness(1.4) saturate(1.3) hue-rotate(180deg);
 }

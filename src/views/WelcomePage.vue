@@ -3,11 +3,13 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useMotion } from '../composables/useMotion.js';
 import { useKanji } from '../composables/useKanji.js';
 import { useSounds } from '../composables/useSounds.js';
+import { useTheme } from '../composables/useTheme.js';
 import { useRouter } from 'vue-router';
 
 const { animateIn, animateLoading } = useMotion();
 const { getSublevelsInfo } = useKanji();
 const { playButtonClick, soundEnabled, toggleSound } = useSounds();
+const { currentTheme, isDarkMode, themeIcon, toggleTheme, setTheme } = useTheme();
 const router = useRouter();
 
 // Estados de los modales
@@ -129,14 +131,22 @@ const createCursorTrail = (e) => {
   
   // Solo crear trail si el mouse se está moviendo
   if (mouseSpeed.value > 2) {
-    console.log('Creating cursor trail with speed:', mouseSpeed.value);
-    const colors = [
+    // Colores según el tema
+    const lightColors = [
       '#90A955', // MossGreen
       '#4F772D', // FernGreen
       '#7FB069', // Asparagus
       '#56876D'  // Viridian
     ];
     
+    const darkColors = [
+      '#4F98CD', // ColumbianBlue
+      '#2E5BBA', // SapphireBlue
+      '#15457B', // PrussianBlue
+      '#1E3A5F'  // SpaceCadet
+    ];
+    
+    const colors = isDarkMode.value ? darkColors : lightColors;
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     const size = Math.min(6 + mouseSpeed.value * 0.3, 16);
     
@@ -151,7 +161,6 @@ const createCursorTrail = (e) => {
     };
     
     cursorTrails.value.push(trail);
-    console.log('Current trails count:', cursorTrails.value.length);
     
     // Limitar el número de trails basado en la velocidad
     const maxTrails = Math.min(15, 8 + Math.floor(mouseSpeed.value * 0.2));
@@ -233,7 +242,6 @@ onMounted(async () => {
   // Event listeners para el teclado y cursor trail
   document.addEventListener('keydown', handleKeydown);
   document.addEventListener('mousemove', createCursorTrail);
-  console.log('Cursor trail initialized in WelcomePage');
   updateTrails();
   
   await nextTick();
@@ -276,8 +284,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden" 
-       style="background: linear-gradient(to bottom right, var(--color-snow), var(--color-Marfil), var(--color-teaGreen));">
+  <div class="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden gradient-background">
     
     <!-- Cursor Trail Effect -->
     <div class="fixed inset-0 pointer-events-none z-50">
@@ -298,8 +305,29 @@ onUnmounted(() => {
         }"
       ></div>
     </div>
-    <!-- Indicador de sonido -->
-    <div class="fixed top-6 right-6 z-20">
+    <!-- Controles superiores (sonido y tema) -->
+    <div class="fixed top-6 right-6 z-20 flex gap-3">
+      <!-- Botón de tema -->
+      <button
+        @click="() => { toggleTheme(); playButtonClick(); }"
+        class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center"
+        :title="`Tema: ${currentTheme} - Click para cambiar`"
+      >
+        <!-- Icono de sol (tema claro) -->
+        <svg v-if="themeIcon === 'light'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <!-- Icono de luna (tema oscuro) -->
+        <svg v-else-if="themeIcon === 'dark'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+        <!-- Icono de sistema -->
+        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+      </button>
+      
+      <!-- Botón de sonido -->
       <button
         @click="() => { toggleSound(); playButtonClick(); }"
         class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center"
@@ -314,10 +342,10 @@ onUnmounted(() => {
     </div>
     <!-- Elementos decorativos de fondo -->
     <div class="absolute inset-0 opacity-10">
-      <div class="absolute top-10 left-10 text-8xl font-bold rotate-12" style="color: var(--color-MossGreen);">漢</div>
-      <div class="absolute top-32 right-20 text-6xl font-bold -rotate-6" style="color: var(--color-FernGreen);">字</div>
-      <div class="absolute bottom-20 left-20 text-7xl font-bold rotate-6" style="color: var(--color-HunterGree);">学</div>
-      <div class="absolute bottom-32 right-10 text-5xl font-bold -rotate-12" style="color: var(--color-DarkGreen);">習</div>
+      <div class="absolute top-10 left-10 text-8xl font-bold rotate-12" style="color: var(--theme-text-secondary);">漢</div>
+      <div class="absolute top-32 right-20 text-6xl font-bold -rotate-6" style="color: var(--theme-text-accent);">字</div>
+      <div class="absolute bottom-20 left-20 text-7xl font-bold rotate-6" style="color: var(--theme-border);">学</div>
+      <div class="absolute bottom-32 right-10 text-5xl font-bold -rotate-12" style="color: var(--theme-text-primary);">習</div>
     </div>
 
     <!-- Contenido principal -->
@@ -325,20 +353,20 @@ onUnmounted(() => {
       
       <!-- Título principal -->
       <div class="main-title mb-8">
-        <h1 class="text-7xl md:text-8xl font-bold mb-6 tracking-wide" style="color: var(--color-DarkGreen);">
+        <h1 class="text-7xl md:text-8xl font-bold mb-6 tracking-wide" style="color: var(--theme-text-primary);">
           漢字を学ぼう
         </h1>
-        <h2 class="text-4xl md:text-5xl font-semibold mb-4" style="color: var(--color-HunterGree);">
+        <h2 class="text-4xl md:text-5xl font-semibold mb-4" style="color: var(--theme-text-accent);">
           Aprende Kanji
         </h2>
       </div>
       
       <!-- Subtítulo -->
       <div class="subtitle mb-12">
-        <p class="text-xl md:text-2xl mb-4 leading-relaxed" style="color: var(--color-FernGreen);">
+        <p class="text-xl md:text-2xl mb-4 leading-relaxed" style="color: var(--theme-text-secondary);">
           Domina los caracteres japoneses de forma interactiva
         </p>
-        <p class="text-lg" style="color: var(--color-MossGreen);">
+        <p class="text-lg" style="color: var(--theme-text-accent);">
           Selecciona tu nivel JLPT y comienza tu viaje hacia la fluidez
         </p>
       </div>
@@ -415,20 +443,20 @@ onUnmounted(() => {
     </div>
 
     <!-- Modal de Selección de Subniveles -->
-    <div v-if="showSublevelModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
+    <div v-if="showSublevelModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" style="background: var(--theme-overlay);">
       <div class="rounded-3xl border-2 p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar" 
-           style="background-color: var(--color-snow); border-color: var(--color-MossGreen); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+           style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
           <div>
-            <h3 class="text-2xl font-bold" style="color: var(--color-DarkGreen);">Selecciona un Subnivel</h3>
-            <p class="text-sm mt-1" style="color: var(--color-FernGreen);">{{ selectedLevel.toUpperCase() }} está dividido en subniveles para facilitar el aprendizaje</p>
+            <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Selecciona un Subnivel</h3>
+            <p class="text-sm mt-1" style="color: var(--theme-text-secondary);">{{ selectedLevel.toUpperCase() }} está dividido en subniveles para facilitar el aprendizaje</p>
           </div>
-          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--color-MossGreen);">&times;</button>
+          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
         
         <div v-if="loadingSublevels" class="text-center py-8">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style="border-color: var(--color-MossGreen);"></div>
-          <p style="color: var(--color-FernGreen);">Cargando subniveles...</p>
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style="border-color: var(--theme-border);"></div>
+          <p style="color: var(--theme-text-secondary);">Cargando subniveles...</p>
         </div>
         
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,26 +469,26 @@ onUnmounted(() => {
             <!-- Número del subnivel -->
             <div class="flex items-center mb-3">
               <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3" 
-                   style="background-color: var(--color-MossGreen); color: var(--color-snow);">
+                   style="background-color: var(--theme-border); color: var(--theme-surface);">
                 {{ subLevel.sublevel }}
               </div>
-              <h4 class="text-lg font-bold" style="color: var(--color-DarkGreen);">
+              <h4 class="text-lg font-bold" style="color: var(--theme-text-primary);">
                 {{ subLevel.name }}
               </h4>
             </div>
             
             <!-- Descripción -->
-            <p class="text-sm mb-2" style="color: var(--color-FernGreen);">
+            <p class="text-sm mb-2" style="color: var(--theme-text-secondary);">
               {{ subLevel.description }}
             </p>
             
             <!-- Información adicional -->
             <div class="flex justify-between items-center text-xs">
-              <span style="color: var(--color-MossGreen);">
+              <span style="color: var(--theme-text-accent);">
                 {{ subLevel.kanjiCount }} kanjis
               </span>
               <span class="px-2 py-1 rounded" 
-                    style="background-color: var(--color-teaGreen); color: var(--color-DarkGreen);">
+                    style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">
                 {{ subLevel.difficulty }}
               </span>
             </div>
@@ -476,30 +504,30 @@ onUnmounted(() => {
     </div>
 
     <!-- Modal de Configuración -->
-    <div v-if="showConfigModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
+    <div v-if="showConfigModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" style="background: var(--theme-overlay);">
       <div class="rounded-3xl border-2 p-8 max-w-md w-full max-h-[80vh] overflow-y-auto custom-scrollbar" 
-           style="background-color: var(--color-snow); border-color: var(--color-MossGreen); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+           style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold" style="color: var(--color-DarkGreen);">Configuración</h3>
-          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--color-MossGreen);">&times;</button>
+          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Configuración</h3>
+          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
         
         <div class="space-y-6">
           <!-- Configuración de sonido -->
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">Audio</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">Audio</h4>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input 
                   type="checkbox" 
                   class="mr-3" 
-                  style="accent-color: var(--color-MossGreen);" 
+                  style="accent-color: var(--theme-border);" 
                   :checked="soundEnabled"
                   @change="toggleSound"
                 >
-                <span style="color: var(--color-FernGreen);">Efectos de sonido</span>
+                <span style="color: var(--theme-text-primary);">Efectos de sonido</span>
               </label>
-              <div class="text-xs mt-1" style="color: var(--color-Aonobi);">
+              <div class="text-xs mt-1" style="color: var(--theme-text-secondary);">
                 Incluye sonidos de botones, respuestas correctas e incorrectas
               </div>
             </div>
@@ -507,35 +535,66 @@ onUnmounted(() => {
 
           <!-- Configuración de dificultad -->
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">Dificultad</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">Dificultad</h4>
             <div class="space-y-2">
               <label class="flex items-center">
-                <input type="radio" name="difficulty" value="easy" class="mr-3" style="accent-color: var(--color-MossGreen);">
-                <span style="color: var(--color-FernGreen);">Mostrar pistas adicionales</span>
+                <input type="radio" name="difficulty" value="easy" class="mr-3" style="accent-color: var(--theme-border);">
+                <span style="color: var(--theme-text-primary);">Mostrar pistas adicionales</span>
               </label>
               <label class="flex items-center">
-                <input type="radio" name="difficulty" value="normal" class="mr-3" style="accent-color: var(--color-MossGreen);" checked>
-                <span style="color: var(--color-FernGreen);">Dificultad estándar</span>
+                <input type="radio" name="difficulty" value="normal" class="mr-3" style="accent-color: var(--theme-border);" checked>
+                <span style="color: var(--theme-text-primary);">Dificultad estándar</span>
               </label>
               <label class="flex items-center">
-                <input type="radio" name="difficulty" value="hard" class="mr-3" style="accent-color: var(--color-MossGreen);">
-                <span style="color: var(--color-FernGreen);">Modo experto (sin pistas)</span>
+                <input type="radio" name="difficulty" value="hard" class="mr-3" style="accent-color: var(--theme-border);">
+                <span style="color: var(--theme-text-primary);">Modo experto (sin pistas)</span>
               </label>
             </div>
           </div>
 
           <!-- Configuración de tema -->
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">Tema</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">Tema</h4>
             <div class="space-y-2">
-              <label class="flex items-center">
-                <input type="radio" name="theme" value="dark" class="mr-3" style="accent-color: var(--color-MossGreen);">
-                <span style="color: var(--color-FernGreen);">Tema oscuro</span>
+              <label class="flex items-center cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="theme" 
+                  value="light" 
+                  class="mr-3" 
+                  style="accent-color: var(--theme-border);" 
+                  :checked="currentTheme === 'light'"
+                  @change="setTheme('light')"
+                >
+                <span style="color: var(--theme-text-primary);">Tema claro</span>
               </label>
-              <label class="flex items-center">
-                <input type="radio" name="theme" value="light" class="mr-3" style="accent-color: var(--color-MossGreen);" checked>
-                <span style="color: var(--color-FernGreen);">Tema claro</span>
+              <label class="flex items-center cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="theme" 
+                  value="dark" 
+                  class="mr-3" 
+                  style="accent-color: var(--theme-border);"
+                  :checked="currentTheme === 'dark'"
+                  @change="setTheme('dark')"
+                >
+                <span style="color: var(--theme-text-primary);">Tema oscuro</span>
               </label>
+              <label class="flex items-center cursor-pointer">
+                <input 
+                  type="radio" 
+                  name="theme" 
+                  value="system" 
+                  class="mr-3" 
+                  style="accent-color: var(--theme-border);"
+                  :checked="currentTheme === 'system'"
+                  @change="setTheme('system')"
+                >
+                <span style="color: var(--theme-text-primary);">Seguir sistema</span>
+              </label>
+              <div class="text-xs mt-2" style="color: var(--theme-text-secondary);">
+                Actual: {{ isDarkMode ? 'Oscuro' : 'Claro' }}
+              </div>
             </div>
           </div>
         </div>
@@ -552,24 +611,24 @@ onUnmounted(() => {
     </div>
 
     <!-- Modal de Guía de uso -->
-    <div v-if="showGuideModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
+    <div v-if="showGuideModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" style="background: var(--theme-overlay);">
       <div class="rounded-3xl border-2 p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
-           style="background-color: var(--color-snow); border-color: var(--color-FernGreen); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+           style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold" style="color: var(--color-DarkGreen);">Guía de uso</h3>
-          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--color-MossGreen);">&times;</button>
+          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Guía de uso</h3>
+          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
         
-        <div class="space-y-6" style="color: var(--color-FernGreen);">
+        <div class="space-y-6" style="color: var(--theme-text-secondary);">
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">🎯 Cómo empezar</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">🎯 Cómo empezar</h4>
             <p class="mb-2">1. Selecciona tu nivel JLPT (desde principiante hasta experto)</p>
             <p class="mb-2">2. Haz clic en el nivel deseado para comenzar a estudiar</p>
             <p>3. Se te presentarán kanjis aleatorios para practicar</p>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">📚 Sistema de aprendizaje</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">📚 Sistema de aprendizaje</h4>
             <p class="mb-2"><strong>Lecturas On (音読み):</strong> Pronunciación china del kanji</p>
             <p class="mb-2"><strong>Lecturas Kun (訓読み):</strong> Pronunciación japonesa nativa</p>
             <p class="mb-2"><strong>Significado:</strong> Traducción al español del kanji</p>
@@ -577,7 +636,7 @@ onUnmounted(() => {
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">⌨️ Teclado japonés</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">⌨️ Teclado japonés</h4>
             <p class="mb-2">• Haz clic en "Mostrar teclado" para abrir el teclado virtual</p>
             <p class="mb-2">• Usa las teclas para escribir en hiragana y katakana</p>
             <p class="mb-2">• El teclado se adapta automáticamente al campo que estés editando</p>
@@ -585,14 +644,14 @@ onUnmounted(() => {
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">🎮 Controles</h4>
-            <p class="mb-2">• <kbd class="px-2 py-1 rounded" style="background-color: var(--color-teaGreen); color: var(--color-DarkGreen);">Enter</kbd> - Verificar respuesta</p>
-            <p class="mb-2">• <kbd class="px-2 py-1 rounded" style="background-color: var(--color-teaGreen); color: var(--color-DarkGreen);">Escape</kbd> - Cerrar modales</p>
-            <p>• <kbd class="px-2 py-1 rounded" style="background-color: var(--color-teaGreen); color: var(--color-DarkGreen);">Tab</kbd> - Navegar entre campos</p>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">🎮 Controles</h4>
+            <p class="mb-2">• <kbd class="px-2 py-1 rounded" style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">Enter</kbd> - Verificar respuesta</p>
+            <p class="mb-2">• <kbd class="px-2 py-1 rounded" style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">Escape</kbd> - Cerrar modales</p>
+            <p>• <kbd class="px-2 py-1 rounded" style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">Tab</kbd> - Navegar entre campos</p>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">💡 Consejos</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">💡 Consejos</h4>
             <p class="mb-2">• Practica regularmente para mejorar la retención</p>
             <p class="mb-2">• No te preocupes por los errores, son parte del aprendizaje</p>
             <p>• Usa la configuración para ajustar la dificultad a tu nivel</p>
@@ -608,24 +667,24 @@ onUnmounted(() => {
     </div>
 
     <!-- Modal Acerca del proyecto -->
-    <div v-if="showAboutModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
+    <div v-if="showAboutModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" style="background: var(--theme-overlay);">
       <div class="rounded-3xl border-2 p-8 max-w-lg w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
-           style="background-color: var(--color-snow); border-color: var(--color-HunterGree); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+           style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold" style="color: var(--color-DarkGreen);">Acerca del proyecto</h3>
-          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--color-MossGreen);">&times;</button>
+          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Acerca del proyecto</h3>
+          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
         
-        <div class="space-y-6 text-center" style="color: var(--color-FernGreen);">
-          <div class="text-6xl mb-4" style="color: var(--color-MossGreen);">漢字を学ぼう</div>
+        <div class="space-y-6 text-center" style="color: var(--theme-text-secondary);">
+          <div class="text-6xl mb-4" style="color: var(--theme-text-accent);">漢字を学ぼう</div>
           
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">Sobre la aplicación</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Sobre la aplicación</h4>
             <p class="mb-4">Una aplicación web interactiva diseñada para ayudar a estudiantes de japonés a aprender y practicar kanji de manera efectiva y divertida.</p>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">Características</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Características</h4>
             <ul class="text-left space-y-2">
               <li>• Organizado por niveles JLPT (N5 a N1)</li>
               <li>• Teclado japonés virtual integrado</li>
@@ -636,19 +695,19 @@ onUnmounted(() => {
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">Tecnologías</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Tecnologías</h4>
             <div class="flex flex-wrap gap-2 justify-center">
-              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--color-MossGreen); color: var(--color-snow);">Vue 3</span>
-              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--color-FernGreen); color: var(--color-snow);">Vite</span>
-              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--color-HunterGree); color: var(--color-snow);">Tailwind CSS</span>
-              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--color-DarkGreen); color: var(--color-Mindaro);">JavaScript</span>
+              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--theme-border); color: var(--theme-surface);">Vue 3</span>
+              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--theme-text-accent); color: var(--theme-surface);">Vite</span>
+              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--theme-text-secondary); color: var(--theme-surface);">Tailwind CSS</span>
+              <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--theme-text-primary); color: var(--theme-surface);">JavaScript</span>
             </div>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--color-HunterGree);">Versión</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Versión</h4>
             <p class="text-sm">v1.0.0 - Diciembre 2024</p>
-            <p class="text-xs mt-2" style="color: var(--color-MossGreen);">
+            <p class="text-xs mt-2" style="color: var(--theme-text-accent);">
               Hecho con ❤️ para la comunidad de estudiantes de japonés
             </p>
           </div>

@@ -59,7 +59,7 @@ onMounted(async () => {
         <div class="text-center">
             <div class="loading-spinner animate-spin rounded-full h-12 w-12 border-b-2 border-Benibana mx-auto mb-4"></div>
             <p class="loading-text text-snow text-lg mb-2">{{ getLoadingMessage() }}</p>
-            <p v-if="sublevel" class="text-sm" style="color: var(--color-FernGreen);">
+            <p v-if="sublevel" class="text-sm" style="color: var(--theme-text-secondary);">
                 Subnivel {{ sublevel }} de {{ sublevelData.totalSublevels || '...' }}
             </p>
         </div>

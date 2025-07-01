@@ -4,11 +4,13 @@ import { useRoute } from 'vue-router';
 import { useMotion } from '../composables/useMotion.js';
 import { useKanji } from '../composables/useKanji.js';
 import { useSounds } from '../composables/useSounds.js';
+import { useTheme } from '../composables/useTheme.js';
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
 const { animateIn } = useMotion();
 const route = useRoute();
 const { playButtonClick, playCorrectAnswer, playIncorrectAnswer, soundEnabled, toggleSound } = useSounds();
+const { currentTheme, isDarkMode, themeIcon, toggleTheme } = useTheme();
 const { 
     sublevelData, 
     navigationData,
@@ -74,13 +76,22 @@ const createCursorTrail = (e) => {
   
   // Solo crear trail si el mouse se está moviendo
   if (mouseSpeed.value > 2) {
-    const colors = [
+    // Colores según el tema
+    const lightColors = [
       '#90A955', // MossGreen
       '#4F772D', // FernGreen
       '#7FB069', // Asparagus
       '#56876D'  // Viridian
     ];
     
+    const darkColors = [
+      '#4F98CD', // ColumbianBlue
+      '#2E5BBA', // SapphireBlue
+      '#15457B', // PrussianBlue
+      '#1E3A5F'  // SpaceCadet
+    ];
+    
+    const colors = isDarkMode.value ? darkColors : lightColors;
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     const size = Math.min(6 + mouseSpeed.value * 0.3, 16);
     
@@ -499,7 +510,6 @@ onMounted(() => {
     
     // Inicializar cursor trail effect
     document.addEventListener('mousemove', createCursorTrail);
-    console.log('Cursor trail initialized in KanjiCard');
     updateTrails();
 });
 
@@ -512,7 +522,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-screen bg-gradient-to-br from-background to-grisTinta p-4 overflow-hidden">
+  <div class="h-screen gradient-background p-4 overflow-hidden">
     
     <!-- Cursor Trail Effect -->
     <div class="fixed inset-0 pointer-events-none z-50">
@@ -570,8 +580,29 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Indicador de sonido (esquina superior derecha) -->
-    <div class="fixed top-6 right-6 z-20">
+    <!-- Controles superiores (sonido y tema) -->
+    <div class="fixed top-6 right-6 z-20 flex gap-3">
+      <!-- Botón de tema -->
+      <button
+        @click="() => { toggleTheme(); playButtonClick(); }"
+        class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center pointer-events-auto"
+        :title="`Tema: ${currentTheme} - Click para cambiar`"
+      >
+        <!-- Icono de sol (tema claro) -->
+        <svg v-if="themeIcon === 'light'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <!-- Icono de luna (tema oscuro) -->
+        <svg v-else-if="themeIcon === 'dark'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+        </svg>
+        <!-- Icono de sistema -->
+        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+      </button>
+      
+      <!-- Botón de sonido -->
       <button
         @click="() => { toggleSound(); playButtonClick(); }"
         class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center pointer-events-auto"
@@ -841,7 +872,7 @@ onUnmounted(() => {
                 
                 <!-- Información del subnivel -->
                 <div v-if="isInSublevelMode" class="mt-3 text-center">
-                  <p class="text-xs" style="color: var(--color-FernGreen);">
+                  <p class="text-xs" style="color: var(--theme-text-secondary);">
                     Subnivel {{ sublevelData.currentSublevel }} de {{ sublevelData.totalSublevels }} 
                     • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
                   </p>
@@ -849,7 +880,7 @@ onUnmounted(() => {
 
                 <!-- Información del nivel general -->
                 <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3 text-center">
-                  <p class="text-xs" style="color: var(--color-FernGreen);">
+                  <p class="text-xs" style="color: var(--theme-text-secondary);">
                     {{ navigationData.currentLevel.toUpperCase() }} 
                     • Kanji {{ navigationData.currentKanjiIndex + 1 }} de {{ navigationData.kanjiList.length }}
                   </p>
