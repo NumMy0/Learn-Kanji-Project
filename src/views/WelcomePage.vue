@@ -157,7 +157,7 @@ const kanjiLevels = ref([
     kanji: '準備',
     color: 'from-Benibana to-firebrick',
     difficulty: 'Superior',
-    estimated: '~1,030 kanjis'
+    estimated: '~370 kanjis'
   },
   { 
     level: 'JLPT-1', 
@@ -165,7 +165,7 @@ const kanjiLevels = ref([
     kanji: '完璧',
     color: 'from-RojoCarmesi to-cardinal',
     difficulty: 'Experto',
-    estimated: '~2,136 kanjis'
+    estimated: '~1200 kanjis'
   }, 
   {
     level: 'Configuración',
@@ -221,12 +221,10 @@ onMounted(async () => {
     <div class="fixed top-6 right-6 z-20">
       <button
         @click="() => { toggleSound(); playButtonClick(); }"
-        class="btn-3d btn-3d-green-floating w-12 h-12 flex items-center justify-center"
+        class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center"
         :title="soundEnabled ? 'Sonido activado - Click para desactivar' : 'Sonido desactivado - Click para activar'"
       >
-        <svg v-if="soundEnabled" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 5l7.5 7.5V3M6.343 3.343a9 9 0 000 12.728m-2.828-2.828a5 5 0 000-7.072M3 12a9 9 0 009 9 9 9 0 009-9"></path>
-        </svg>
+        <svg v-if="soundEnabled" xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-music"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M13 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" /></svg>
         <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clip-rule="evenodd"></path>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
@@ -336,7 +334,7 @@ onMounted(async () => {
     </div>
 
     <!-- Modal de Selección de Subniveles -->
-    <div v-if="showSublevelModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+    <div v-if="showSublevelModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
       <div class="rounded-3xl border-2 p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar" 
            style="background-color: var(--color-snow); border-color: var(--color-MossGreen); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
         <div class="flex justify-between items-center mb-6">
@@ -397,7 +395,7 @@ onMounted(async () => {
     </div>
 
     <!-- Modal de Configuración -->
-    <div v-if="showConfigModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+    <div v-if="showConfigModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
       <div class="rounded-3xl border-2 p-8 max-w-md w-full max-h-[80vh] overflow-y-auto custom-scrollbar" 
            style="background-color: var(--color-snow); border-color: var(--color-MossGreen); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
         <div class="flex justify-between items-center mb-6">
@@ -473,7 +471,7 @@ onMounted(async () => {
     </div>
 
     <!-- Modal de Guía de uso -->
-    <div v-if="showGuideModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+    <div v-if="showGuideModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
       <div class="rounded-3xl border-2 p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
            style="background-color: var(--color-snow); border-color: var(--color-FernGreen); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
         <div class="flex justify-between items-center mb-6">
@@ -529,7 +527,7 @@ onMounted(async () => {
     </div>
 
     <!-- Modal Acerca del proyecto -->
-    <div v-if="showAboutModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+    <div v-if="showAboutModal" class="fixed inset-0 bg-platinum bg-opacity-100 flex items-center justify-center z-50 p-4">
       <div class="rounded-3xl border-2 p-8 max-w-lg w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
            style="background-color: var(--color-snow); border-color: var(--color-HunterGree); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
         <div class="flex justify-between items-center mb-6">

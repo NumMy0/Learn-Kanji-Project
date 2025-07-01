@@ -20,16 +20,33 @@ export function useMotion() {
   const animateIn = async (selector, options = {}) => {
     await nextTick();
 
-    const defaultOptions = {
+    const {
+      easing = "ease-out",
+      duration = 0.6,
+      delay,
+      repeat,
+      ...animatableOptions
+    } = options;
+
+    const defaultAnimatableOptions = {
       opacity: [0, 1],
       y: [20, 0],
-      duration: 0.6,
-      easing: "ease-out",
-      ...options,
+      ...animatableOptions,
+    };
+
+    const configOptions = {
+      duration,
+      easing,
+      ...(delay !== undefined && { delay }),
+      ...(repeat !== undefined && { repeat }),
     };
 
     try {
-      const animation = animate(selector, defaultOptions);
+      const animation = animate(
+        selector,
+        defaultAnimatableOptions,
+        configOptions
+      );
       animations.value.add(animation);
       return animation;
     } catch (error) {
@@ -42,16 +59,33 @@ export function useMotion() {
   const animateOut = async (selector, options = {}) => {
     await nextTick();
 
-    const defaultOptions = {
+    const {
+      easing = "ease-in",
+      duration = 0.4,
+      delay,
+      repeat,
+      ...animatableOptions
+    } = options;
+
+    const defaultAnimatableOptions = {
       opacity: [1, 0],
       y: [0, -20],
-      duration: 0.4,
-      easing: "ease-in",
-      ...options,
+      ...animatableOptions,
+    };
+
+    const configOptions = {
+      duration,
+      easing,
+      ...(delay !== undefined && { delay }),
+      ...(repeat !== undefined && { repeat }),
     };
 
     try {
-      const animation = animate(selector, defaultOptions);
+      const animation = animate(
+        selector,
+        defaultAnimatableOptions,
+        configOptions
+      );
       animations.value.add(animation);
       return animation;
     } catch (error) {
@@ -64,17 +98,33 @@ export function useMotion() {
   const animateStagger = async (selector, options = {}) => {
     await nextTick();
 
-    const defaultOptions = {
+    const {
+      easing = "ease-out",
+      duration = 0.5,
+      delay = stagger(0.1),
+      repeat,
+      ...animatableOptions
+    } = options;
+
+    const defaultAnimatableOptions = {
       opacity: [0, 1],
       y: [30, 0],
-      duration: 0.5,
-      delay: stagger(0.1),
-      easing: "ease-out",
-      ...options,
+      ...animatableOptions,
+    };
+
+    const configOptions = {
+      duration,
+      easing,
+      delay,
+      ...(repeat !== undefined && { repeat }),
     };
 
     try {
-      const animation = animate(selector, defaultOptions);
+      const animation = animate(
+        selector,
+        defaultAnimatableOptions,
+        configOptions
+      );
       animations.value.add(animation);
       return animation;
     } catch (error) {
@@ -87,23 +137,41 @@ export function useMotion() {
   const animateHover = (element, enterOptions = {}, leaveOptions = {}) => {
     if (!element) return;
 
+    const {
+      easing: enterEasing = "ease-out",
+      duration: enterDuration = 0.2,
+      ...enterAnimatableOptions
+    } = enterOptions;
+
+    const {
+      easing: leaveEasing = "ease-out",
+      duration: leaveDuration = 0.2,
+      ...leaveAnimatableOptions
+    } = leaveOptions;
+
     const defaultEnter = {
       scale: 1.05,
-      duration: 0.2,
-      easing: "ease-out",
-      ...enterOptions,
+      ...enterAnimatableOptions,
     };
 
     const defaultLeave = {
       scale: 1,
-      duration: 0.2,
-      easing: "ease-out",
-      ...leaveOptions,
+      ...leaveAnimatableOptions,
+    };
+
+    const enterConfig = {
+      duration: enterDuration,
+      easing: enterEasing,
+    };
+
+    const leaveConfig = {
+      duration: leaveDuration,
+      easing: leaveEasing,
     };
 
     const handleMouseEnter = () => {
       try {
-        const animation = animate(element, defaultEnter);
+        const animation = animate(element, defaultEnter, enterConfig);
         animations.value.add(animation);
       } catch (error) {
         console.warn("Hover enter animation error:", error);
@@ -112,7 +180,7 @@ export function useMotion() {
 
     const handleMouseLeave = () => {
       try {
-        const animation = animate(element, defaultLeave);
+        const animation = animate(element, defaultLeave, leaveConfig);
         animations.value.add(animation);
       } catch (error) {
         console.warn("Hover leave animation error:", error);
