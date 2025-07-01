@@ -1,9 +1,21 @@
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { useMotion } from '../composables/useMotion.js';
+import { useKanji } from '../composables/useKanji.js';
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
 const { animateIn } = useMotion();
+const route = useRoute();
+const { 
+    sublevelData, 
+    navigationData,
+    getNextKanji, 
+    getPreviousKanji, 
+    getRandomKanjiFromSublevel,
+    goToNextKanji,
+    goToRandomKanji
+} = useKanji();
 
 const props = defineProps({
     Kanji: {
@@ -24,6 +36,7 @@ const props = defineProps({
     }
 });
 
+// Estados existentes
 const userInput = ref('');
 const userInputMeaning = ref('');
 const userInputOn = ref('');
@@ -37,6 +50,54 @@ const studyMode = ref(false);
 const showKeyboard = ref(false);
 const matchedReadingType = ref('');
 const activeInput = ref('meaning'); // 'meaning', 'on' o 'kun'
+
+// Estados para navegación
+const loadingNavigation = ref(false);
+
+// Computed para verificar si estamos en modo subnivel
+const isInSublevelMode = computed(() => {
+    return route.query.sublevel && route.params.level === 'jlpt-4' && sublevelData.kanjiList.length > 0;
+});
+
+// Funciones de navegación
+const goToNextKanjiManual = async () => {
+    try {
+        loadingNavigation.value = true;
+        await goToNextKanji();
+        resetCard();
+    } catch (error) {
+        console.warn('Error al navegar:', error.message);
+    } finally {
+        loadingNavigation.value = false;
+    }
+};
+
+const goToPreviousKanji = async () => {
+    if (!isInSublevelMode.value) return;
+    
+    try {
+        loadingNavigation.value = true;
+        await getPreviousKanji();
+        resetCard();
+    } catch (error) {
+        console.warn('Ya estás en el primer kanji:', error.message);
+    } finally {
+        loadingNavigation.value = false;
+    }
+};
+
+const goToRandomKanjiManual = async () => {
+    try {
+        loadingNavigation.value = true;
+        await goToRandomKanji();
+        resetCard();
+    } catch (error) {
+        console.error('Error al obtener kanji aleatorio:', error);
+    } finally {
+        loadingNavigation.value = false;
+    }
+};
+
 
 // Computed para mostrar el progreso
 const progressPercent = computed(() => {
@@ -236,6 +297,17 @@ const validateAnswer = () => {
             duration: 0.6,
             easing: 'ease-out'
         });
+
+        // Automáticamente pasar al siguiente kanji después de un breve delay
+        setTimeout(async () => {
+            try {
+                await goToNextKanji();
+                resetCard();
+            } catch (error) {
+                console.log('Info:', error.message);
+                // Si no hay más kanjis, solo resetear sin avanzar
+            }
+        }, 1500); // Esperar 1.5 segundos para que el usuario vea el resultado
     } else {
         isCorrect.value = false;
         
@@ -612,6 +684,70 @@ onUnmounted(() => {
                 >
                   Intentar de nuevo
                 </button>
+                
+                <!-- Botones de navegación para subniveles -->
+                <div v-if="isInSublevelMode" class="flex gap-2 mt-4">
+                  <button
+                    @click="goToPreviousKanji"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    title="Kanji anterior"
+                  >
+                    ⮜ Anterior
+                  </button>
+                  <button
+                    @click="goToRandomKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-medium flex-1 text-sm"
+                    title="Kanji aleatorio"
+                  >
+                    🎲 Aleatorio
+                  </button>
+                  <button
+                    @click="goToNextKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    title="Siguiente kanji"
+                  >
+                    Siguiente ⮞
+                  </button>
+                </div>
+                
+                <!-- Botones de navegación para otros niveles -->
+                <div v-else-if="navigationData.kanjiList.length > 0" class="flex gap-2 mt-4">
+                  <button
+                    @click="goToRandomKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-medium flex-1 text-sm"
+                    title="Kanji aleatorio"
+                  >
+                    🎲 Aleatorio
+                  </button>
+                  <button
+                    @click="goToNextKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    title="Siguiente kanji"
+                  >
+                    Siguiente ⮞
+                  </button>
+                </div>
+                
+                <!-- Información del subnivel -->
+                <div v-if="isInSublevelMode" class="mt-3 text-center">
+                  <p class="text-xs" style="color: var(--color-FernGreen);">
+                    Subnivel {{ sublevelData.currentSublevel }} de {{ sublevelData.totalSublevels }} 
+                    • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
+                  </p>
+                </div>
+
+                <!-- Información del nivel general -->
+                <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3 text-center">
+                  <p class="text-xs" style="color: var(--color-FernGreen);">
+                    {{ navigationData.currentLevel.toUpperCase() }} 
+                    • Kanji {{ navigationData.currentKanjiIndex + 1 }} de {{ navigationData.kanjiList.length }}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -834,6 +970,70 @@ onUnmounted(() => {
                 >
                   Intentar de nuevo
                 </button>
+                
+                <!-- Botones de navegación para subniveles -->
+                <div v-if="isInSublevelMode" class="flex gap-2 mt-4">
+                  <button
+                    @click="goToPreviousKanji"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    title="Kanji anterior"
+                  >
+                    ⮜ Anterior
+                  </button>
+                  <button
+                    @click="goToRandomKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-medium flex-1 text-sm"
+                    title="Kanji aleatorio"
+                  >
+                    🎲 Aleatorio
+                  </button>
+                  <button
+                    @click="goToNextKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    title="Siguiente kanji"
+                  >
+                    Siguiente ⮞
+                  </button>
+                </div>
+                
+                <!-- Botones de navegación para otros niveles -->
+                <div v-else-if="navigationData.kanjiList.length > 0" class="flex gap-2 mt-4">
+                  <button
+                    @click="goToRandomKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-medium flex-1 text-sm"
+                    title="Kanji aleatorio"
+                  >
+                    🎲 Aleatorio
+                  </button>
+                  <button
+                    @click="goToNextKanjiManual"
+                    :disabled="loadingNavigation"
+                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    title="Siguiente kanji"
+                  >
+                    Siguiente ⮞
+                  </button>
+                </div>
+                
+                <!-- Información del subnivel -->
+                <div v-if="isInSublevelMode" class="mt-3 text-center">
+                  <p class="text-xs" style="color: var(--color-FernGreen);">
+                    Subnivel {{ sublevelData.currentSublevel }} de {{ sublevelData.totalSublevels }} 
+                    • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
+                  </p>
+                </div>
+
+                <!-- Información del nivel general -->
+                <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3 text-center">
+                  <p class="text-xs" style="color: var(--color-FernGreen);">
+                    {{ navigationData.currentLevel.toUpperCase() }} 
+                    • Kanji {{ navigationData.currentKanjiIndex + 1 }} de {{ navigationData.kanjiList.length }}
+                  </p>
+                </div>
               </div>
             </div>
 
