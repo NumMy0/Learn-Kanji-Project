@@ -29,6 +29,13 @@
   --color-Vanilla: #E3DC95;
   --color-Pearl: #E3DCC2;
   --color-teaGreen: #C9DCB3;
+  --color-DarkSpringGreen: #04724D;
+  --color-Viridian: #56876D;
+  --color-CambridgeBlue: #8DB38B;
+  --color-Asparagus: #7FB069;
+  --color-HunterGreen: #4B644A;
+  --color-BruswickGreen: #14453D;
+  --color-MyrtleGreen: #3D7068;
 
 }
 
@@ -905,4 +912,137 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-FernGreen);
+}
+
+/* === Green Sublevel Button === */
+.btn-3d-green-sublevel {
+  color: var(--color-snow);
+  background: var(--color-Asparagus);
+  border: 2px solid var(--color-Viridian);
+}
+
+.btn-3d-green-sublevel::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-Viridian);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-HunterGreen), 0 0.625em 0 0 var(--color-BruswickGreen);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-green-sublevel:hover {
+  background: var(--color-Viridian);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-green-sublevel:hover::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGreen), 0 0.5em 0 0 var(--color-BruswickGreen);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-green-sublevel:active {
+  background: var(--color-Viridian);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-green-sublevel:active::before {
+  box-shadow: 0 0 0 2px var(--color-HunterGreen), 0 0 var(--color-BruswickGreen);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* === Green Config Button === */
+.btn-3d-green-config {
+  color: var(--color-snow);
+  background: var(--color-CambridgeBlue);
+  border: 2px solid var(--color-MyrtleGreen);
+}
+
+.btn-3d-green-config::before {
+  position: absolute;
+  content: '';
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-MyrtleGreen);
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--color-DarkSpringGreen), 0 0.625em 0 0 var(--color-BruswickGreen);
+  transform: translate3d(0, 0.75em, -1em);
+  transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), 
+              box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
+}
+
+.btn-3d-green-config:hover {
+  background: var(--color-MyrtleGreen);
+  transform: translate(0, 0.25em);
+}
+
+.btn-3d-green-config:hover::before {
+  box-shadow: 0 0 0 2px var(--color-DarkSpringGreen), 0 0.5em 0 0 var(--color-BruswickGreen);
+  transform: translate3d(0, 0.5em, -1em);
+}
+
+.btn-3d-green-config:active {
+  background: var(--color-MyrtleGreen);
+  transform: translate(0em, 0.75em);
+}
+
+.btn-3d-green-config:active::before {
+  box-shadow: 0 0 0 2px var(--color-DarkSpringGreen), 0 0 var(--color-BruswickGreen);
+  transform: translate3d(0, 0, -1em);
+}
+
+/* === Cursor Trail Effect === */
+.cursor-trail {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: screen;
+  animation: cursor-trail-fade 0.6s ease-out forwards;
+}
+
+@keyframes cursor-trail-fade {
+  0% {
+    opacity: 0.8;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3);
+  }
+}
+
+/* Cursor trail variants */
+.cursor-trail-small {
+  width: 8px;
+  height: 8px;
+}
+
+.cursor-trail-medium {
+  width: 12px;
+  height: 12px;
+}
+
+.cursor-trail-large {
+  width: 16px;
+  height: 16px;
+}
+
+/* Enhanced cursor for kanji area */
+.kanji-area {
+  cursor: crosshair;
+}
+
+.kanji-area:hover .cursor-trail {
+  background: radial-gradient(circle, var(--color-Asparagus) 0%, var(--color-Viridian) 50%, transparent 100%);
 }

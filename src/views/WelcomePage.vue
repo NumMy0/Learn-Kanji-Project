@@ -112,19 +112,69 @@ const selectSublevel = (sublevel) => {
 };
 
 // Cerrar modal al presionar Escape
+// Estados para cursor trail effect
+const cursorTrails = ref([]);
+const trailId = ref(0);
+const lastMousePosition = ref({ x: 0, y: 0 });
+const mouseSpeed = ref(0);
+
+// Función para crear cursor trail effect
+const createCursorTrail = (e) => {
+  // Calcular velocidad del mouse
+  const deltaX = e.clientX - lastMousePosition.value.x;
+  const deltaY = e.clientY - lastMousePosition.value.y;
+  mouseSpeed.value = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  
+  lastMousePosition.value = { x: e.clientX, y: e.clientY };
+  
+  // Solo crear trail si el mouse se está moviendo
+  if (mouseSpeed.value > 2) {
+    console.log('Creating cursor trail with speed:', mouseSpeed.value);
+    const colors = [
+      '#90A955', // MossGreen
+      '#4F772D', // FernGreen
+      '#7FB069', // Asparagus
+      '#56876D'  // Viridian
+    ];
+    
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const size = Math.min(6 + mouseSpeed.value * 0.3, 16);
+    
+    const trail = {
+      id: trailId.value++,
+      x: e.clientX,
+      y: e.clientY,
+      life: 1.0,
+      size: size,
+      color: randomColor,
+      blur: Math.random() * 2 + 1
+    };
+    
+    cursorTrails.value.push(trail);
+    console.log('Current trails count:', cursorTrails.value.length);
+    
+    // Limitar el número de trails basado en la velocidad
+    const maxTrails = Math.min(15, 8 + Math.floor(mouseSpeed.value * 0.2));
+    if (cursorTrails.value.length > maxTrails) {
+      cursorTrails.value.shift();
+    }
+  }
+};
+
+// Función para animar y actualizar trails
+const updateTrails = () => {
+  cursorTrails.value = cursorTrails.value.filter(trail => {
+    trail.life -= 0.08;
+    return trail.life > 0;
+  });
+  requestAnimationFrame(updateTrails);
+};
+
 const handleKeydown = (event) => {
   if (event.key === 'Escape') {
     closeModal();
   }
 };
-
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown);
-});
 
 const kanjiLevels = ref([
   { 
@@ -178,7 +228,14 @@ const kanjiLevels = ref([
   }
 ]);
 
+// Función principal onMounted que combina animaciones y cursor trail
 onMounted(async () => {
+  // Event listeners para el teclado y cursor trail
+  document.addEventListener('keydown', handleKeydown);
+  document.addEventListener('mousemove', createCursorTrail);
+  console.log('Cursor trail initialized in WelcomePage');
+  updateTrails();
+  
   await nextTick();
   
   // Animar título principal
@@ -211,12 +268,36 @@ onMounted(async () => {
     });
   }, 400);
 });
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown);
+  document.removeEventListener('mousemove', createCursorTrail);
+});
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden" 
        style="background: linear-gradient(to bottom right, var(--color-snow), var(--color-Marfil), var(--color-teaGreen));">
     
+    <!-- Cursor Trail Effect -->
+    <div class="fixed inset-0 pointer-events-none z-50">
+      <div
+        v-for="trail in cursorTrails"
+        :key="trail.id"
+        class="absolute rounded-full cursor-trail"
+        :style="{
+          left: trail.x + 'px',
+          top: trail.y + 'px',
+          opacity: trail.life * 0.8,
+          transform: `translate(-50%, -50%) scale(${trail.life})`,
+          background: `radial-gradient(circle, ${trail.color}80 0%, ${trail.color}40 50%, transparent 100%)`,
+          width: trail.size + 'px',
+          height: trail.size + 'px',
+          filter: `blur(${trail.blur}px)`,
+          boxShadow: `0 0 ${trail.size * 0.5}px ${trail.color}30`
+        }"
+      ></div>
+    </div>
     <!-- Indicador de sonido -->
     <div class="fixed top-6 right-6 z-20">
       <button
@@ -269,7 +350,7 @@ onMounted(async () => {
           <button
             v-if="item.isConfig"
             @click="openConfigModal"
-            class="level-card btn-3d btn-3d-green-medium text-center block"
+            class="level-card btn-3d btn-3d-green-config text-center block"
           >
             <!-- Kanji decorativo -->
             <div class="text-3xl font-bold mb-2">
@@ -355,7 +436,7 @@ onMounted(async () => {
             v-for="subLevel in availableSublevels"
             :key="subLevel.sublevel"
             @click="selectSublevel(subLevel.sublevel)"
-            class="btn-3d btn-3d-green-medium text-left p-6 hover:scale-105 transition-transform duration-200"
+            class="btn-3d btn-3d-green-sublevel text-left p-6 hover:scale-105 transition-transform duration-200"
           >
             <!-- Número del subnivel -->
             <div class="flex items-center mb-3">

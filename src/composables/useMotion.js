@@ -20,6 +20,16 @@ export function useMotion() {
   const animateIn = async (selector, options = {}) => {
     await nextTick();
 
+    // Validar que existan elementos antes de animar
+    const elements =
+      typeof selector === "string"
+        ? document.querySelectorAll(selector)
+        : selector;
+    if (!elements || (elements.length !== undefined && elements.length === 0)) {
+      console.warn(`No elements found for selector: ${selector}`);
+      return null;
+    }
+
     const {
       easing = "ease-out",
       duration = 0.6,
@@ -59,6 +69,16 @@ export function useMotion() {
   const animateOut = async (selector, options = {}) => {
     await nextTick();
 
+    // Validar que existan elementos antes de animar
+    const elements =
+      typeof selector === "string"
+        ? document.querySelectorAll(selector)
+        : selector;
+    if (!elements || (elements.length !== undefined && elements.length === 0)) {
+      console.warn(`No elements found for selector: ${selector}`);
+      return null;
+    }
+
     const {
       easing = "ease-in",
       duration = 0.4,
@@ -97,6 +117,16 @@ export function useMotion() {
   // Función para animar con stagger (elementos secuenciales)
   const animateStagger = async (selector, options = {}) => {
     await nextTick();
+
+    // Validar que existan elementos antes de animar
+    const elements =
+      typeof selector === "string"
+        ? document.querySelectorAll(selector)
+        : selector;
+    if (!elements || (elements.length !== undefined && elements.length === 0)) {
+      console.warn(`No elements found for selector: ${selector}`);
+      return null;
+    }
 
     const {
       easing = "ease-out",
@@ -200,6 +230,16 @@ export function useMotion() {
   // Función para loading animation
   const animateLoading = async (selector) => {
     await nextTick();
+
+    // Validar que existan elementos antes de animar
+    const elements =
+      typeof selector === "string"
+        ? document.querySelectorAll(selector)
+        : selector;
+    if (!elements || (elements.length !== undefined && elements.length === 0)) {
+      console.warn(`No elements found for selector: ${selector}`);
+      return null;
+    }
 
     try {
       const animation = animate(
