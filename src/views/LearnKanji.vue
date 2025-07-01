@@ -14,11 +14,11 @@ const sublevel = $route.query.sublevel ? parseInt($route.query.sublevel) : null;
 
 const loadKanjiData = async () => {
     try {
-        // Si hay un subnivel especificado y es JLPT-4, usar la función de subniveles
-        if (sublevel && level === 'jlpt-4') {
+        // Si hay un subnivel especificado, usar la función de subniveles para cualquier nivel
+        if (sublevel) {
             await fetchKanjisBySublevel(level, sublevel);
         } else {
-            // Para otros casos, usar la función original
+            // Para casos sin subnivel, usar la función original
             await fetchKanjiByLevel(level);
         }
         
@@ -36,7 +36,7 @@ const loadKanjiData = async () => {
 };
 
 const getLoadingMessage = () => {
-    if (sublevel && level === 'jlpt-4') {
+    if (sublevel) {
         return `Cargando kanji del nivel ${level.toUpperCase()}, subnivel ${sublevel}...`;
     }
     return `Cargando kanji del nivel ${level.toUpperCase()}...`;
@@ -59,7 +59,7 @@ onMounted(async () => {
         <div class="text-center">
             <div class="loading-spinner animate-spin rounded-full h-12 w-12 border-b-2 border-Benibana mx-auto mb-4"></div>
             <p class="loading-text text-snow text-lg mb-2">{{ getLoadingMessage() }}</p>
-            <p v-if="sublevel && level === 'jlpt-4'" class="text-sm" style="color: var(--color-FernGreen);">
+            <p v-if="sublevel" class="text-sm" style="color: var(--color-FernGreen);">
                 Subnivel {{ sublevel }} de {{ sublevelData.totalSublevels || '...' }}
             </p>
         </div>

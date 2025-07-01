@@ -43,13 +43,22 @@ const closeModal = () => {
 const handleLevelSelection = async (levelItem) => {
   const level = levelItem.level.toLowerCase();
   
-  // Si es JLPT-4, mostrar modal de selección de subniveles
-  if (level === 'jlpt-4') {
-    selectedLevel.value = level;
-    await loadSublevels(level);
-    showSublevelModal.value = true;
-  } else {
-    // Para otros niveles, navegar directamente
+  try {
+    // Obtener información de subniveles para el nivel seleccionado
+    const info = await getSublevelsInfo(level);
+    
+    // Si tiene más de un subnivel, mostrar modal de selección
+    if (info.totalSublevels > 1) {
+      selectedLevel.value = level;
+      await loadSublevels(level);
+      showSublevelModal.value = true;
+    } else {
+      // Si solo tiene un subnivel, navegar directamente
+      router.push(`/kanji/${level}`);
+    }
+  } catch (error) {
+    console.error('Error checking sublevels for level:', level, error);
+    // En caso de error, navegar directamente
     router.push(`/kanji/${level}`);
   }
 };
@@ -66,12 +75,20 @@ const loadSublevels = async (level) => {
       const endIndex = Math.min(startIndex + 100, info.totalKanjis);
       const kanjiCount = endIndex - startIndex;
       
+      // Determinar dificultad basada en el subnivel
+      let difficulty = 'Básico';
+      if (i > Math.ceil(info.totalSublevels / 3)) {
+        difficulty = 'Avanzado';
+      } else if (i > 1) {
+        difficulty = 'Intermedio';
+      }
+      
       availableSublevels.value.push({
         sublevel: i,
         name: `Subnivel ${i}`,
         description: `Kanjis ${startIndex + 1}-${endIndex}`,
         kanjiCount: kanjiCount,
-        difficulty: i === 1 ? 'Básico' : 'Intermedio'
+        difficulty: difficulty
       });
     }
   } catch (error) {
@@ -302,7 +319,7 @@ onMounted(async () => {
         <div class="flex justify-between items-center mb-6">
           <div>
             <h3 class="text-2xl font-bold" style="color: var(--color-DarkGreen);">Selecciona un Subnivel</h3>
-            <p class="text-sm mt-1" style="color: var(--color-FernGreen);">JLPT-4 está dividido en subniveles para facilitar el aprendizaje</p>
+            <p class="text-sm mt-1" style="color: var(--color-FernGreen);">{{ selectedLevel.toUpperCase() }} está dividido en subniveles para facilitar el aprendizaje</p>
           </div>
           <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--color-MossGreen);">&times;</button>
         </div>

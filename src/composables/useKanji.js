@@ -176,12 +176,6 @@ export function useKanji() {
       // Inicializar traductor si no existe
       await initTranslator();
 
-      // Solo implementar subniveles para jlpt-4 por ahora
-      if (level !== "jlpt-4") {
-        // Para otros niveles, usar la función original
-        return await fetchKanjiByLevel(level);
-      }
-
       console.log(`Cargando nivel ${level}, subnivel ${sublevel}`);
 
       // Obtener información completa del nivel
@@ -423,44 +417,50 @@ export function useKanji() {
     }
   };
 
-  // Función para obtener un kanji aleatorio del nivel actual
-  const getRandomKanjiFromLevel = async () => {
+  // Función para obtener el kanji anterior del nivel actual
+  const getPreviousKanjiFromLevel = async () => {
     try {
       if (navigationData.kanjiList.length === 0) {
         throw new Error("No hay kanjis cargados para este nivel");
       }
 
-      const randomIndex = Math.floor(
-        Math.random() * navigationData.kanjiList.length
-      );
-      navigationData.currentKanjiIndex = randomIndex;
+      const previousIndex = navigationData.currentKanjiIndex - 1;
 
-      const randomKanji = navigationData.kanjiList[randomIndex];
-      await loadKanjiDetails(randomKanji);
+      if (previousIndex < 0) {
+        // Si llegamos al inicio, ir al último kanji (loop)
+        navigationData.currentKanjiIndex = navigationData.kanjiList.length - 1;
+      } else {
+        navigationData.currentKanjiIndex = previousIndex;
+      }
+
+      const previousKanji =
+        navigationData.kanjiList[navigationData.currentKanjiIndex];
+      await loadKanjiDetails(previousKanji);
 
       console.log(
-        `Kanji aleatorio ${randomIndex + 1}/${
+        `Kanji ${navigationData.currentKanjiIndex + 1}/${
           navigationData.kanjiList.length
         } del nivel ${navigationData.currentLevel}`
       );
 
       return kanjiData;
     } catch (error) {
-      console.error("Error getting random kanji from level:", error);
+      console.error("Error getting previous kanji from level:", error);
       throw error;
     }
   };
 
   // Función universal para navegar al siguiente kanji (detecta automáticamente si es subnivel o nivel)
   const goToNextKanji = async () => {
-    // Si estamos en modo subnivel (JLPT-4), usar funciones de subnivel
+    // Si estamos en modo subnivel (cualquier nivel JLPT con subniveles), usar funciones de subnivel
     if (
-      sublevelData.currentLevel === "jlpt-4" &&
-      sublevelData.kanjiList.length > 0
+      sublevelData.currentLevel &&
+      sublevelData.kanjiList.length > 0 &&
+      sublevelData.totalSublevels > 1
     ) {
       return await getNextKanji();
     }
-    // Para otros niveles, usar navegación general
+    // Para niveles sin subniveles, usar navegación general
     else if (navigationData.kanjiList.length > 0) {
       return await getNextKanjiFromLevel();
     } else {
@@ -470,16 +470,35 @@ export function useKanji() {
 
   // Función universal para obtener kanji aleatorio
   const goToRandomKanji = async () => {
-    // Si estamos en modo subnivel (JLPT-4), usar funciones de subnivel
+    // Si estamos en modo subnivel (cualquier nivel JLPT con subniveles), usar funciones de subnivel
     if (
-      sublevelData.currentLevel === "jlpt-4" &&
-      sublevelData.kanjiList.length > 0
+      sublevelData.currentLevel &&
+      sublevelData.kanjiList.length > 0 &&
+      sublevelData.totalSublevels > 1
     ) {
       return await getRandomKanjiFromSublevel();
     }
-    // Para otros niveles, usar navegación general
+    // Para niveles sin subniveles, usar navegación general
     else if (navigationData.kanjiList.length > 0) {
       return await getRandomKanjiFromLevel();
+    } else {
+      throw new Error("No hay kanjis cargados para navegar");
+    }
+  };
+
+  // Función universal para navegar al kanji anterior
+  const goToPreviousKanji = async () => {
+    // Si estamos en modo subnivel (cualquier nivel JLPT con subniveles), usar funciones de subnivel
+    if (
+      sublevelData.currentLevel &&
+      sublevelData.kanjiList.length > 0 &&
+      sublevelData.totalSublevels > 1
+    ) {
+      return await getPreviousKanji();
+    }
+    // Para niveles sin subniveles, usar navegación general
+    else if (navigationData.kanjiList.length > 0) {
+      return await getPreviousKanjiFromLevel();
     } else {
       throw new Error("No hay kanjis cargados para navegar");
     }
@@ -602,6 +621,18 @@ export function useKanji() {
     }
   };
 
+  // Función para verificar si un nivel debería usar subniveles basado en la cantidad de kanjis
+  const shouldUseSublevel = async (level) => {
+    try {
+      const info = await getSublevelsInfo(level);
+      // Usar subniveles si hay más de 100 kanjis (más de 1 subnivel)
+      return info.totalSublevels > 1;
+    } catch (error) {
+      console.warn(`Error checking sublevel for ${level}:`, error);
+      return false;
+    }
+  };
+
   const resetKanjiData = () => {
     kanjiData.Kanji = "";
     kanjiData.CorrectMeaning = "";
@@ -621,9 +652,12 @@ export function useKanji() {
     getSublevelsInfo,
     getNextKanji,
     getPreviousKanji,
+    getPreviousKanjiFromLevel,
     getRandomKanjiFromSublevel,
     goToNextKanji,
+    goToPreviousKanji,
     goToRandomKanji,
+    shouldUseSublevel,
     resetKanjiData,
   };
 }

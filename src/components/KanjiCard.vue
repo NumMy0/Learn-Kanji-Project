@@ -14,6 +14,7 @@ const {
     getPreviousKanji, 
     getRandomKanjiFromSublevel,
     goToNextKanji,
+    goToPreviousKanji,
     goToRandomKanji
 } = useKanji();
 
@@ -56,7 +57,9 @@ const loadingNavigation = ref(false);
 
 // Computed para verificar si estamos en modo subnivel
 const isInSublevelMode = computed(() => {
-    return route.query.sublevel && route.params.level === 'jlpt-4' && sublevelData.kanjiList.length > 0;
+    return route.query.sublevel && 
+           sublevelData.kanjiList.length > 0 && 
+           sublevelData.totalSublevels > 1;
 });
 
 // Funciones de navegación
@@ -72,15 +75,13 @@ const goToNextKanjiManual = async () => {
     }
 };
 
-const goToPreviousKanji = async () => {
-    if (!isInSublevelMode.value) return;
-    
+const goToPreviousKanjiAction = async () => {    
     try {
         loadingNavigation.value = true;
-        await getPreviousKanji();
+        await goToPreviousKanji();
         resetCard();
     } catch (error) {
-        console.warn('Ya estás en el primer kanji:', error.message);
+        console.warn('Error al navegar:', error.message);
     } finally {
         loadingNavigation.value = false;
     }
@@ -297,17 +298,6 @@ const validateAnswer = () => {
             duration: 0.6,
             easing: 'ease-out'
         });
-
-        // Automáticamente pasar al siguiente kanji después de un breve delay
-        setTimeout(async () => {
-            try {
-                await goToNextKanji();
-                resetCard();
-            } catch (error) {
-                console.log('Info:', error.message);
-                // Si no hay más kanjis, solo resetear sin avanzar
-            }
-        }, 1500); // Esperar 1.5 segundos para que el usuario vea el resultado
     } else {
         isCorrect.value = false;
         
@@ -688,7 +678,7 @@ onUnmounted(() => {
                 <!-- Botones de navegación para subniveles -->
                 <div v-if="isInSublevelMode" class="flex gap-2 mt-4">
                   <button
-                    @click="goToPreviousKanji"
+                    @click="goToPreviousKanjiAction"
                     :disabled="loadingNavigation"
                     class="btn-3d btn-3d-green-light flex-1 text-sm"
                     title="Kanji anterior"
@@ -974,7 +964,7 @@ onUnmounted(() => {
                 <!-- Botones de navegación para subniveles -->
                 <div v-if="isInSublevelMode" class="flex gap-2 mt-4">
                   <button
-                    @click="goToPreviousKanji"
+                    @click="goToPreviousKanjiAction"
                     :disabled="loadingNavigation"
                     class="btn-3d btn-3d-green-light flex-1 text-sm"
                     title="Kanji anterior"
