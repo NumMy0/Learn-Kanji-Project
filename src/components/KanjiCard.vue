@@ -54,74 +54,174 @@ const kanjiDataAvailable = computed(() => {
            !props.CorrectReadingKun.includes('no disponible');
 });
 
-// Computed para verificar si se puede validar la respuesta
-const canValidateAnswer = computed(() => {
-    return userInputMeaning.value.trim() && 
-           userInputOn.value.trim() && 
-           userInputKun.value.trim() && 
-           kanjiDataAvailable.value;
+// Computed para verificar qué lecturas están disponibles individualmente
+const meaningAvailable = computed(() => {
+    return props.CorrectMeaning && !props.CorrectMeaning.includes('no disponible');
 });
 
-// Función para normalizar respuestas (eliminar espacios, convertir a minúsculas)
+const onReadingAvailable = computed(() => {
+    return props.CorrectReadingOn && !props.CorrectReadingOn.includes('no disponible');
+});
+
+const kunReadingAvailable = computed(() => {
+    return props.CorrectReadingKun && !props.CorrectReadingKun.includes('no disponible');
+});
+
+console.log('Kanji:', props.Kanji);
+console.log('Correct Meaning:', props.CorrectMeaning);
+console.log('Correct Reading On:', props.CorrectReadingOn);
+console.log('Correct Reading Kun:', props.CorrectReadingKun);
+
+// Computed para verificar si todos los inputs disponibles están llenos
+const allInputsFilled = computed(() => {
+    let allFilled = true;
+    
+    // Verificar significado si está disponible
+    if (meaningAvailable.value) {
+        allFilled = allFilled && userInputMeaning.value.trim();
+    }
+    
+    // Verificar lectura On si está disponible
+    if (onReadingAvailable.value) {
+        allFilled = allFilled && userInputOn.value.trim();
+    }
+    
+    // Verificar lectura Kun si está disponible
+    if (kunReadingAvailable.value) {
+        allFilled = allFilled && userInputKun.value.trim();
+    }
+    
+    return allFilled;
+});
+
+// Computed para verificar si se puede validar la respuesta
+const canValidateAnswer = computed(() => {
+    // Al menos uno de los campos debe estar disponible
+    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
+    return allInputsFilled.value && hasAvailableData;
+});
+
+// Computed para el texto del botón
+const buttonText = computed(() => {
+    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
+    
+    if (!hasAvailableData) {
+        return 'No hay datos disponibles';
+    }
+    if (!allInputsFilled.value) {
+        return 'Completa todas las respuestas disponibles';
+    }
+    return 'Validar Respuestas';
+});
+
+// Computed para saber si el botón debe estar deshabilitado
+const isButtonDisabled = computed(() => {
+    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
+    return !allInputsFilled.value || !hasAvailableData;
+});
+
+// Función para normalizar respuestas (eliminar espacios, convertir a minúsculas, eliminar caracteres especiales)
 const normalizeText = (text) => {
     if (!text || typeof text !== 'string') return '';
-    return text.toLowerCase().trim().replace(/\s+/g, '');
+    
+    // Convertir a minúsculas y eliminar espacios
+    let normalized = text.toLowerCase().trim().replace(/\s+/g, '');
+    
+    // Para lecturas japonesas, eliminar guiones, puntos, comas y otros caracteres especiales
+    // Mantener solo hiragana (ひらがな), katakana (カタカナ), letras, números
+    normalized = normalized.replace(/[-・。、～〜]/g, '');
+    
+    // Eliminar cualquier carácter que no sea letra, número, hiragana o katakana
+    normalized = normalized.replace(/[^\u3040-\u309F\u30A0-\u30FFa-zA-Z0-9]/g, '');
+    
+    return normalized;
 };
 
 // Función para validar la respuesta
 const validateAnswer = () => {
-    // Verificar que tenemos inputs del usuario
-    if (!userInputMeaning.value.trim() || !userInputOn.value.trim() || !userInputKun.value.trim()) return;
-    
-    // Verificar que tenemos las respuestas correctas válidas
-    if (!props.CorrectMeaning || 
-        !props.CorrectReadingOn || 
-        !props.CorrectReadingKun ||
-        props.CorrectMeaning.includes('no disponible') ||
-        props.CorrectReadingOn.includes('no disponible') ||
-        props.CorrectReadingKun.includes('no disponible')) {
-        console.error('Datos del kanji incompletos o no disponibles para validar la respuesta');
-        // Mostrar un mensaje de error al usuario
+    // Verificar que tenemos al menos un campo disponible
+    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
+    if (!hasAvailableData) {
+        console.error('No hay datos del kanji disponibles para validar');
         isCorrect.value = false;
-        matchedReadingType.value = 'Datos del kanji no disponibles para validación';
+        matchedReadingType.value = 'No hay datos disponibles para validación';
         showAnswer.value = true;
         return;
     }
     
+    // Verificar que los inputs requeridos estén llenos
+    if ((meaningAvailable.value && !userInputMeaning.value.trim()) ||
+        (onReadingAvailable.value && !userInputOn.value.trim()) ||
+        (kunReadingAvailable.value && !userInputKun.value.trim())) {
+        return;
+    }
+    
     attempts.value++;
-    const userAnswerMeaning = normalizeText(userInputMeaning.value);
-    const userAnswerOn = normalizeText(userInputOn.value);
-    const userAnswerKun = normalizeText(userInputKun.value);
-    const correctAnswerMeaning = normalizeText(props.CorrectMeaning);
-    const correctAnswerOn = normalizeText(props.CorrectReadingOn);
-    const correctAnswerKun = normalizeText(props.CorrectReadingKun);
     
-    // Verificar cuáles respuestas son correctas
-    const meaningCorrect = userAnswerMeaning === correctAnswerMeaning;
-    const onCorrect = userAnswerOn === correctAnswerOn;
-    const kunCorrect = userAnswerKun === correctAnswerKun;
+    // Solo validar los campos que están disponibles
+    const correctAnswers = [];
+    const incorrectAnswers = [];
+    let allCorrect = true;
     
-    if (meaningCorrect && onCorrect && kunCorrect) {
-        matchedReadingType.value = 'todas las respuestas (significado, On y Kun)';
+    // Validar significado si está disponible
+    if (meaningAvailable.value) {
+        const userAnswerMeaning = normalizeText(userInputMeaning.value);
+        const correctAnswerMeaning = normalizeText(props.CorrectMeaning);
+        const meaningCorrect = userAnswerMeaning === correctAnswerMeaning;
+        
+        console.log('Validando significado:', userAnswerMeaning, '===', correctAnswerMeaning, '?', meaningCorrect);
+        
+        if (meaningCorrect) {
+            correctAnswers.push('significado');
+        } else {
+            incorrectAnswers.push('significado');
+            allCorrect = false;
+        }
+    }
+    
+    // Validar lectura On si está disponible
+    if (onReadingAvailable.value) {
+        const userAnswerOn = normalizeText(userInputOn.value);
+        const correctAnswerOn = normalizeText(props.CorrectReadingOn);
+        const onCorrect = userAnswerOn === correctAnswerOn;
+        
+        console.log('Validando lectura On:', userAnswerOn, '===', correctAnswerOn, '?', onCorrect);
+        
+        if (onCorrect) {
+            correctAnswers.push('lectura On');
+        } else {
+            incorrectAnswers.push('lectura On');
+            allCorrect = false;
+        }
+    }
+    
+    // Validar lectura Kun si está disponible
+    if (kunReadingAvailable.value) {
+        const userAnswerKun = normalizeText(userInputKun.value);
+        const correctAnswerKun = normalizeText(props.CorrectReadingKun);
+        const kunCorrect = userAnswerKun === correctAnswerKun;
+        
+        console.log('Validando lectura Kun:', userAnswerKun, '===', correctAnswerKun, '?', kunCorrect);
+        
+        if (kunCorrect) {
+            correctAnswers.push('lectura Kun');
+        } else {
+            incorrectAnswers.push('lectura Kun');
+            allCorrect = false;
+        }
+    }
+    
+    // Determinar el resultado
+    if (allCorrect && correctAnswers.length > 0) {
+        matchedReadingType.value = correctAnswers.length === 1 
+            ? `${correctAnswers[0]} correcta`
+            : `todas las respuestas disponibles (${correctAnswers.join(', ')}) correctas`;
         isCorrect.value = true;
     } else {
-        // Guardar información sobre qué está incorrecto para mostrar feedback específico
-        const correctAnswers = [];
-        const incorrectAnswers = [];
-        
-        if (meaningCorrect) correctAnswers.push('significado');
-        else incorrectAnswers.push('significado');
-        
-        if (onCorrect) correctAnswers.push('lectura On');
-        else incorrectAnswers.push('lectura On');
-        
-        if (kunCorrect) correctAnswers.push('lectura Kun');
-        else incorrectAnswers.push('lectura Kun');
-        
         if (correctAnswers.length > 0) {
             matchedReadingType.value = `${correctAnswers.join(' y ')} correcta${correctAnswers.length > 1 ? 's' : ''}, pero ${incorrectAnswers.join(' y ')} incorrecta${incorrectAnswers.length > 1 ? 's' : ''}`;
         } else {
-            matchedReadingType.value = 'todas las respuestas incorrectas';
+            matchedReadingType.value = `todas las respuestas disponibles incorrectas`;
         }
         isCorrect.value = false;
     }
@@ -166,7 +266,17 @@ const resetCard = () => {
     showHint.value = false;
     studyMode.value = false;
     matchedReadingType.value = '';
-    activeInput.value = 'meaning';
+    
+    // Establecer el input activo en el primer campo disponible
+    if (meaningAvailable.value) {
+        activeInput.value = 'meaning';
+    } else if (onReadingAvailable.value) {
+        activeInput.value = 'on';
+    } else if (kunReadingAvailable.value) {
+        activeInput.value = 'kun';
+    } else {
+        activeInput.value = 'meaning'; // fallback
+    }
 };
 
 // Función para alternar modo estudio
@@ -195,27 +305,34 @@ const getHint = () => {
 
 // Funciones para el teclado japonés
 const handleKeyboardInput = (char) => {
-    if (activeInput.value === 'meaning') {
+    if (activeInput.value === 'meaning' && meaningAvailable.value) {
         userInputMeaning.value += char;
-    } else if (activeInput.value === 'on') {
+    } else if (activeInput.value === 'on' && onReadingAvailable.value) {
         userInputOn.value += char;
-    } else {
+    } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
         userInputKun.value += char;
     }
 };
 
 const handleKeyboardClear = () => {
-    if (activeInput.value === 'meaning') {
+    if (activeInput.value === 'meaning' && meaningAvailable.value) {
         userInputMeaning.value = '';
-    } else if (activeInput.value === 'on') {
+    } else if (activeInput.value === 'on' && onReadingAvailable.value) {
         userInputOn.value = '';
-    } else {
+    } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
         userInputKun.value = '';
     }
 };
 
 const setActiveInput = (inputType) => {
-    activeInput.value = inputType;
+    // Solo establecer el input como activo si está disponible
+    if (inputType === 'meaning' && meaningAvailable.value) {
+        activeInput.value = inputType;
+    } else if (inputType === 'on' && onReadingAvailable.value) {
+        activeInput.value = inputType;
+    } else if (inputType === 'kun' && kunReadingAvailable.value) {
+        activeInput.value = inputType;
+    }
 };
 
 const toggleKeyboard = () => {
@@ -325,7 +442,7 @@ onUnmounted(() => {
             <!-- Información del kanji -->
             <div class="space-y-4 mb-6">
               <!-- Significado (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
-              <div v-if="studyMode || showAnswer" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
+              <div v-if="(studyMode || showAnswer) && meaningAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 bg-MossGreen rounded-lg flex items-center justify-center">
                     <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -342,7 +459,7 @@ onUnmounted(() => {
               <!-- Lecturas (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
               <div v-if="studyMode || showAnswer" class="space-y-3">
                 <!-- Lectura On -->
-                <div v-if="CorrectReadingOn" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-FernGreen">
+                <div v-if="onReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-FernGreen">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-FernGreen rounded-lg flex items-center justify-center">
                       <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,7 +474,7 @@ onUnmounted(() => {
                 </div>
                 
                 <!-- Lectura Kun -->
-                <div v-if="CorrectReadingKun" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-HunterGreen">
+                <div v-if="kunReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-HunterGreen">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-HunterGreen rounded-lg flex items-center justify-center">
                       <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -387,10 +504,11 @@ onUnmounted(() => {
                 <p class="text-cardinal">Las lecturas comienzan con: <span class="font-bold">{{ getHint() }}</span></p>
               </div>
 
-              <!-- Inputs para las respuestas (siempre visibles) -->
+              <!-- Inputs para las respuestas (solo mostrar campos disponibles) -->
               <div v-if="!showAnswer" class="space-y-4">
                 <div class="space-y-4">
-                  <div class="space-y-2">
+                  <!-- Input de significado - solo si está disponible -->
+                  <div v-if="meaningAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Significado
                     </label>
@@ -408,7 +526,8 @@ onUnmounted(() => {
                     >
                   </div>
                   
-                  <div class="space-y-2">
+                  <!-- Input de lectura On - solo si está disponible -->
+                  <div v-if="onReadingAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Lectura On (音読み)
                     </label>
@@ -426,7 +545,8 @@ onUnmounted(() => {
                     >
                   </div>
                   
-                  <div class="space-y-2">
+                  <!-- Input de lectura Kun - solo si está disponible -->
+                  <div v-if="kunReadingAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Lectura Kun (訓読み)
                     </label>
@@ -447,10 +567,10 @@ onUnmounted(() => {
                 
                 <button
                   @click="validateAnswer"
-                  :disabled="!canValidateAnswer"
+                  :disabled="isButtonDisabled"
                   class="w-full btn-3d btn-3d-green-primary"
                 >
-                  {{ kanjiDataAvailable ? 'Validar Todas las Respuestas' : 'Datos del kanji no disponibles' }}
+                  {{ buttonText }}
                 </button>
               </div>
 
@@ -544,7 +664,7 @@ onUnmounted(() => {
             <!-- Información del kanji -->
             <div class="space-y-4 mb-6">
               <!-- Significado (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
-              <div v-if="studyMode || showAnswer" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
+              <div v-if="(studyMode || showAnswer) && meaningAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 bg-MossGreen rounded-lg flex items-center justify-center">
                     <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -561,7 +681,7 @@ onUnmounted(() => {
               <!-- Lecturas (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
               <div v-if="studyMode || showAnswer" class="space-y-3">
                 <!-- Lectura On -->
-                <div v-if="CorrectReadingOn" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-FernGreen">
+                <div v-if="onReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-FernGreen">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-FernGreen rounded-lg flex items-center justify-center">
                       <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -576,7 +696,7 @@ onUnmounted(() => {
                 </div>
                 
                 <!-- Lectura Kun -->
-                <div v-if="CorrectReadingKun" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-HunterGreen">
+                <div v-if="kunReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-HunterGreen">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 bg-HunterGreen rounded-lg flex items-center justify-center">
                       <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -606,10 +726,11 @@ onUnmounted(() => {
                 <p class="text-cardinal">Las lecturas comienzan con: <span class="font-bold">{{ getHint() }}</span></p>
               </div>
 
-              <!-- Inputs para las respuestas (siempre visibles) -->
+              <!-- Inputs para las respuestas (solo mostrar campos disponibles) -->
               <div v-if="!showAnswer" class="space-y-4">
                 <div class="space-y-4">
-                  <div class="space-y-2">
+                  <!-- Input de significado - solo si está disponible -->
+                  <div v-if="meaningAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Significado
                     </label>
@@ -627,7 +748,8 @@ onUnmounted(() => {
                     >
                   </div>
                   
-                  <div class="space-y-2">
+                  <!-- Input de lectura On - solo si está disponible -->
+                  <div v-if="onReadingAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Lectura On (音読み)
                     </label>
@@ -645,7 +767,8 @@ onUnmounted(() => {
                     >
                   </div>
                   
-                  <div class="space-y-2">
+                  <!-- Input de lectura Kun - solo si está disponible -->
+                  <div v-if="kunReadingAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
                       Lectura Kun (訓読み)
                     </label>
@@ -666,10 +789,10 @@ onUnmounted(() => {
                 
                 <button
                   @click="validateAnswer"
-                  :disabled="!canValidateAnswer"
+                  :disabled="isButtonDisabled"
                   class="w-full btn-3d btn-3d-green-primary"
                 >
-                  {{ kanjiDataAvailable ? 'Validar Todas las Respuestas' : 'Datos del kanji no disponibles' }}
+                  {{ buttonText }}
                 </button>
               </div>
 

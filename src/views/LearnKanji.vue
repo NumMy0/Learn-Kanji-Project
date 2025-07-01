@@ -74,7 +74,8 @@ onMounted(async () => {
         <kanjiCard 
             :Kanji="kanjiData.Kanji"
             :CorrectMeaning="kanjiData.CorrectMeaning"
-            :CorrectReading="kanjiData.CorrectReadingOn || kanjiData.CorrectReadingKun"
+            :CorrectReadingOn="kanjiData.CorrectReadingOn"
+            :CorrectReadingKun="kanjiData.CorrectReadingKun"
         />
     </div>
 
