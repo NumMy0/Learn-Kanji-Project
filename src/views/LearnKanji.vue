@@ -7,13 +7,20 @@ import { useKanji } from '../composables/useKanji.js';
 
 const $route = useRoute();
 const { animateLoading, animateIn } = useMotion();
-const { loading, error, kanjiData, fetchKanjiByLevel } = useKanji();
+const { loading, error, kanjiData, sublevelData, fetchKanjiByLevel, fetchKanjisBySublevel } = useKanji();
 
 const level = $route.params.level;
+const sublevel = $route.query.sublevel ? parseInt($route.query.sublevel) : null;
 
 const loadKanjiData = async () => {
     try {
-        await fetchKanjiByLevel(level);
+        // Si hay un subnivel especificado y es JLPT-4, usar la función de subniveles
+        if (sublevel && level === 'jlpt-4') {
+            await fetchKanjisBySublevel(level, sublevel);
+        } else {
+            // Para otros casos, usar la función original
+            await fetchKanjiByLevel(level);
+        }
         
         // Animar la entrada del componente cuando los datos estén listos
         await nextTick();
@@ -26,6 +33,13 @@ const loadKanjiData = async () => {
     } catch (err) {
         console.error("Failed to load kanji:", err);
     }
+};
+
+const getLoadingMessage = () => {
+    if (sublevel && level === 'jlpt-4') {
+        return `Cargando kanji del nivel ${level.toUpperCase()}, subnivel ${sublevel}...`;
+    }
+    return `Cargando kanji del nivel ${level.toUpperCase()}...`;
 };
 
 onMounted(async () => {
@@ -44,7 +58,10 @@ onMounted(async () => {
     >
         <div class="text-center">
             <div class="loading-spinner animate-spin rounded-full h-12 w-12 border-b-2 border-Benibana mx-auto mb-4"></div>
-            <p class="loading-text text-snow text-lg mb-2">Cargando kanji del nivel {{ level }}...</p>
+            <p class="loading-text text-snow text-lg mb-2">{{ getLoadingMessage() }}</p>
+            <p v-if="sublevel && level === 'jlpt-4'" class="text-sm" style="color: var(--color-FernGreen);">
+                Subnivel {{ sublevel }} de {{ sublevelData.totalSublevels || '...' }}
+            </p>
         </div>
     </div>
 

@@ -1,13 +1,23 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useMotion } from '../composables/useMotion.js';
+import { useKanji } from '../composables/useKanji.js';
+import { useRouter } from 'vue-router';
 
 const { animateIn, animateLoading } = useMotion();
+const { getSublevelsInfo } = useKanji();
+const router = useRouter();
 
 // Estados de los modales
 const showConfigModal = ref(false);
 const showGuideModal = ref(false);
 const showAboutModal = ref(false);
+const showSublevelModal = ref(false);
+
+// Estado para subniveles
+const selectedLevel = ref('');
+const availableSublevels = ref([]);
+const loadingSublevels = ref(false);
 
 // Funciones para manejar modales
 const openConfigModal = () => {
@@ -26,6 +36,55 @@ const closeModal = () => {
   showConfigModal.value = false;
   showGuideModal.value = false;
   showAboutModal.value = false;
+  showSublevelModal.value = false;
+};
+
+// Función para manejar selección de nivel
+const handleLevelSelection = async (levelItem) => {
+  const level = levelItem.level.toLowerCase();
+  
+  // Si es JLPT-4, mostrar modal de selección de subniveles
+  if (level === 'jlpt-4') {
+    selectedLevel.value = level;
+    await loadSublevels(level);
+    showSublevelModal.value = true;
+  } else {
+    // Para otros niveles, navegar directamente
+    router.push(`/kanji/${level}`);
+  }
+};
+
+// Función para cargar subniveles
+const loadSublevels = async (level) => {
+  try {
+    loadingSublevels.value = true;
+    const info = await getSublevelsInfo(level);
+    
+    availableSublevels.value = [];
+    for (let i = 1; i <= info.totalSublevels; i++) {
+      const startIndex = (i - 1) * 100;
+      const endIndex = Math.min(startIndex + 100, info.totalKanjis);
+      const kanjiCount = endIndex - startIndex;
+      
+      availableSublevels.value.push({
+        sublevel: i,
+        name: `Subnivel ${i}`,
+        description: `Kanjis ${startIndex + 1}-${endIndex}`,
+        kanjiCount: kanjiCount,
+        difficulty: i === 1 ? 'Básico' : 'Intermedio'
+      });
+    }
+  } catch (error) {
+    console.error('Error loading sublevels:', error);
+  } finally {
+    loadingSublevels.value = false;
+  }
+};
+
+// Función para seleccionar subnivel
+const selectSublevel = (sublevel) => {
+  router.push(`/kanji/${selectedLevel.value}?sublevel=${sublevel}`);
+  closeModal();
 };
 
 // Cerrar modal al presionar Escape
@@ -196,10 +255,10 @@ onMounted(async () => {
           </button>
           
           <!-- Enlaces regulares de niveles JLPT -->
-          <router-link
+          <button
             v-else
-            :to="`/kanji/${item.level.toLowerCase()}`"
-            :class="`level-card btn-3d btn-3d-${item.level.toLowerCase().replace('-', '')} text-center block`"
+            @click="handleLevelSelection(item)"
+            :class="`level-card btn-3d btn-3d-${item.level.toLowerCase().replace('-', '')} text-center block w-full`"
           >
             <!-- Kanji decorativo -->
             <div class="text-3xl font-bold mb-2">
@@ -220,7 +279,7 @@ onMounted(async () => {
             <div class="text-xs opacity-75">
               {{ item.estimated }}
             </div>
-          </router-link>
+          </button>
         </template>
       </div>
       
@@ -234,6 +293,67 @@ onMounted(async () => {
         </button>
       </div>
 
+    </div>
+
+    <!-- Modal de Selección de Subniveles -->
+    <div v-if="showSublevelModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+      <div class="rounded-3xl border-2 p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar" 
+           style="background-color: var(--color-snow); border-color: var(--color-MossGreen); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h3 class="text-2xl font-bold" style="color: var(--color-DarkGreen);">Selecciona un Subnivel</h3>
+            <p class="text-sm mt-1" style="color: var(--color-FernGreen);">JLPT-4 está dividido en subniveles para facilitar el aprendizaje</p>
+          </div>
+          <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--color-MossGreen);">&times;</button>
+        </div>
+        
+        <div v-if="loadingSublevels" class="text-center py-8">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style="border-color: var(--color-MossGreen);"></div>
+          <p style="color: var(--color-FernGreen);">Cargando subniveles...</p>
+        </div>
+        
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            v-for="subLevel in availableSublevels"
+            :key="subLevel.sublevel"
+            @click="selectSublevel(subLevel.sublevel)"
+            class="btn-3d btn-3d-green-medium text-left p-6 hover:scale-105 transition-transform duration-200"
+          >
+            <!-- Número del subnivel -->
+            <div class="flex items-center mb-3">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3" 
+                   style="background-color: var(--color-MossGreen); color: var(--color-snow);">
+                {{ subLevel.sublevel }}
+              </div>
+              <h4 class="text-lg font-bold" style="color: var(--color-DarkGreen);">
+                {{ subLevel.name }}
+              </h4>
+            </div>
+            
+            <!-- Descripción -->
+            <p class="text-sm mb-2" style="color: var(--color-FernGreen);">
+              {{ subLevel.description }}
+            </p>
+            
+            <!-- Información adicional -->
+            <div class="flex justify-between items-center text-xs">
+              <span style="color: var(--color-MossGreen);">
+                {{ subLevel.kanjiCount }} kanjis
+              </span>
+              <span class="px-2 py-1 rounded" 
+                    style="background-color: var(--color-teaGreen); color: var(--color-DarkGreen);">
+                {{ subLevel.difficulty }}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <div class="mt-6 flex gap-3">
+          <button @click="closeModal" class="btn-3d btn-3d-green-light flex-1">
+            Cancelar
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Modal de Configuración -->
