@@ -621,13 +621,6 @@ onUnmounted(() => {
         
         <div class="space-y-6" style="color: var(--theme-text-secondary);">
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">🎯 Cómo empezar</h4>
-            <p class="mb-2">1. Selecciona tu nivel JLPT (desde principiante hasta experto)</p>
-            <p class="mb-2">2. Haz clic en el nivel deseado para comenzar a estudiar</p>
-            <p>3. Se te presentarán kanjis aleatorios para practicar</p>
-          </div>
-
-          <div>
             <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">📚 Sistema de aprendizaje</h4>
             <p class="mb-2"><strong>Lecturas On (音読み):</strong> Pronunciación china del kanji</p>
             <p class="mb-2"><strong>Lecturas Kun (訓読み):</strong> Pronunciación japonesa nativa</p>
@@ -637,17 +630,10 @@ onUnmounted(() => {
 
           <div>
             <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">⌨️ Teclado japonés</h4>
-            <p class="mb-2">• Haz clic en "Mostrar teclado" para abrir el teclado virtual</p>
+            <p class="mb-2">• Haz clic en キーボード para abrir el teclado virtual</p>
             <p class="mb-2">• Usa las teclas para escribir en hiragana y katakana</p>
             <p class="mb-2">• El teclado se adapta automáticamente al campo que estés editando</p>
             <p>• Presiona "Cerrar" para ocultar el teclado</p>
-          </div>
-
-          <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">🎮 Controles</h4>
-            <p class="mb-2">• <kbd class="px-2 py-1 rounded" style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">Enter</kbd> - Verificar respuesta</p>
-            <p class="mb-2">• <kbd class="px-2 py-1 rounded" style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">Escape</kbd> - Cerrar modales</p>
-            <p>• <kbd class="px-2 py-1 rounded" style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">Tab</kbd> - Navegar entre campos</p>
           </div>
 
           <div>
