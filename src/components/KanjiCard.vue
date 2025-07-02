@@ -459,6 +459,67 @@ const handleKeyboardInput = (char) => {
     }
 };
 
+// Mapeo para caracteres especiales
+const dakutenMap = {
+    'か': 'が', 'き': 'ぎ', 'く': 'ぐ', 'け': 'げ', 'こ': 'ご',
+    'さ': 'ざ', 'し': 'じ', 'す': 'ず', 'せ': 'ぜ', 'そ': 'ぞ',
+    'た': 'だ', 'ち': 'ぢ', 'つ': 'づ', 'て': 'で', 'と': 'ど',
+    'は': 'ば', 'ひ': 'び', 'ふ': 'ぶ', 'へ': 'べ', 'ほ': 'ぼ',
+    'カ': 'ガ', 'キ': 'ギ', 'ク': 'グ', 'ケ': 'ゲ', 'コ': 'ゴ',
+    'サ': 'ザ', 'シ': 'ジ', 'ス': 'ズ', 'セ': 'ゼ', 'ソ': 'ゾ',
+    'タ': 'ダ', 'チ': 'ヂ', 'ツ': 'ヅ', 'テ': 'デ', 'ト': 'ド',
+    'ハ': 'バ', 'ヒ': 'ビ', 'フ': 'ブ', 'ヘ': 'ベ', 'ホ': 'ボ',
+};
+
+const handakutenMap = {
+    'は': 'ぱ', 'ひ': 'ぴ', 'ふ': 'ぷ', 'へ': 'ぺ', 'ほ': 'ぽ',
+    'ハ': 'パ', 'ヒ': 'ピ', 'フ': 'プ', 'ヘ': 'ペ', 'ホ': 'ポ',
+};
+
+// Función para manejar caracteres especiales
+const handleSpecialChar = (type) => {
+    let currentInput = '';
+    let currentValue = '';
+    
+    if (activeInput.value === 'meaning' && meaningAvailable.value) {
+        currentValue = userInputMeaning.value;
+    } else if (activeInput.value === 'on' && onReadingAvailable.value) {
+        currentValue = userInputOn.value;
+    } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
+        currentValue = userInputKun.value;
+    }
+    
+    if (currentValue.length === 0) return;
+    
+    const lastChar = currentValue[currentValue.length - 1];
+    let convertedChar = '';
+    
+    if (type === 'dakuten') {
+        convertedChar = dakutenMap[lastChar];
+    } else if (type === 'handakuten') {
+        convertedChar = handakutenMap[lastChar];
+    }
+    
+    // Si se encontró una conversión, reemplaza el último carácter
+    if (convertedChar) {
+        const newValue = currentValue.slice(0, -1) + convertedChar;
+        
+        if (activeInput.value === 'meaning' && meaningAvailable.value) {
+            userInputMeaning.value = newValue;
+        } else if (activeInput.value === 'on' && onReadingAvailable.value) {
+            userInputOn.value = newValue;
+        } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
+            userInputKun.value = newValue;
+        }
+    }
+};
+
+// Alias para manejar la conversión de caracteres especiales desde el teclado japonés
+const handleSpecialCharConversion = (type) => {
+    handleSpecialChar(type);
+};
+
+// Función para limpiar el input activo cuando se presiona el botón "Limpiar" del teclado
 const handleKeyboardClear = () => {
     if (activeInput.value === 'meaning' && meaningAvailable.value) {
         userInputMeaning.value = '';
@@ -468,6 +529,7 @@ const handleKeyboardClear = () => {
         userInputKun.value = '';
     }
 };
+
 
 const setActiveInput = (inputType) => {
     // Solo establecer el input como activo si está disponible
@@ -807,11 +869,6 @@ onUnmounted(() => {
                   <h3 class="text-2xl font-bold text-cardinal mb-2">Incorrecto</h3>
                   <div class="text-grisTinta space-y-2">
                     <p class="text-cardinal font-medium">{{ matchedReadingType }}</p>
-                    <div class="space-y-1">
-                      <p><span class="font-bold text-cardinal">Significado correcto: {{ CorrectMeaning }}</span></p>
-                      <p><span class="font-bold text-cardinal">On correcta: {{ CorrectReadingOn }}</span></p>
-                      <p><span class="font-bold text-cardinal">Kun correcta: {{ CorrectReadingKun }}</span></p>
-                    </div>
                   </div>
                 </div>
 
@@ -910,6 +967,7 @@ onUnmounted(() => {
             @text-input="handleKeyboardInput"
             @clear="handleKeyboardClear"
             @close="closeKeyboard"
+            @apply-special="handleSpecialCharConversion"
           />
         </div>
 

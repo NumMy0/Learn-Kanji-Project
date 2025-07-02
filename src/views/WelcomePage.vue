@@ -618,13 +618,25 @@ onUnmounted(() => {
           <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Guía de uso</h3>
           <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
+
         
         <div class="space-y-6" style="color: var(--theme-text-secondary);">
+
+          <div>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Notas</h4>
+            <ul class="list-disc text-left space-y-2 list-inside">
+              <p class="mb-2">• Esta aplicación es un proyecto personal y no está afiliada a ninguna institución oficial de enseñanza de japonés.</p>
+              <p class="mb-2">• Para reportar errores o sugerencias, escríbeme un correo.</p>
+              <p class="mb-2">• Los significados están en inglés dado que es el idioma de referencia para el aprendizaje de kanji.</p>
+              <p class="mb-2">• Para próximas actualizaciones de los significados, puedes dejarme un correo.</p>
+              <p class="mb-2">• ¡Gracias por usar la aplicación y si te resultó útil puedes dejarme un café en <a href="https://www.buymeacoffee.com/tu_usuario" target="_blank" style="color: var(--theme-text-accent);">Buy Me a Coffee</a>!</p>
+            </ul>
+          </div>
+          
           <div>
             <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">📚 Sistema de aprendizaje</h4>
-            <p class="mb-2"><strong>Lecturas On (音読み):</strong> Pronunciación china del kanji</p>
-            <p class="mb-2"><strong>Lecturas Kun (訓読み):</strong> Pronunciación japonesa nativa</p>
-            <p class="mb-2"><strong>Significado:</strong> Traducción al español del kanji</p>
+            <p class="mb-2"><strong>Lecturas On (音読み):</strong> Lectura china del kanji</p>
+            <p class="mb-2"><strong>Lecturas Kun (訓読み):</strong> Lectura japonesa nativa</p>
             <p>Puedes usar el teclado japonés virtual para practicar la escritura</p>
           </div>
 
@@ -677,6 +689,8 @@ onUnmounted(() => {
               <li>• Práctica de lecturas On y Kun</li>
               <li>• Interfaz moderna y responsive</li>
               <li>• Sistema de validación inteligente</li>
+              <li>• Modo oscuro y claro</li>
+              <li>• Accesible desde cualquier dispositivo</li>
             </ul>
           </div>
 

@@ -11,7 +11,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['text-input', 'clear', 'close']);
+const emit = defineEmits(['text-input', 'clear', 'close', 'apply-special']);
 
 const { playKeyboardKey, playButtonClick } = useSounds();
 
@@ -102,23 +102,10 @@ const changeMode = (mode) => {
  * @param {string} type - El tipo de carácter especial a aplicar ('dakuten' o 'handakuten').
  */
 const applySpecialChar = (type) => {
-  if (currentInputText.value.length === 0) return;
-
-  const lastChar = currentInputText.value[currentInputText.value.length - 1];
-  let convertedChar = '';
-
-  if (type === 'dakuten') {
-    convertedChar = dakutenMap[lastChar];
-  } else if (type === 'handakuten') {
-    convertedChar = handakutenMap[lastChar];
-  }
-
-  // Si se encontró una conversión, reemplaza el último carácter
-  if (convertedChar) {
-    currentInputText.value = currentInputText.value.slice(0, -1) + convertedChar;
-    emit('backspace');
-    emit('text-input', convertedChar);
-  }
+  playKeyboardKey();
+  
+  // Emitir el evento para que el componente padre maneje la conversión
+  emit('apply-special', type);
 };
 
 </script>
@@ -190,6 +177,22 @@ const applySpecialChar = (type) => {
       <div class="flex justify-center gap-1 mt-2">
         <KeyButton char="っ" @click="handleKeyPress('っ')" :buttonClass="'btn-3d-green-light text-xs'" />
         <KeyButton char="ん" @click="handleKeyPress('ん')" :buttonClass="'btn-3d-green-light text-xs'" />
+      </div>
+
+      <!-- Botones para caracteres especiales -->
+      <div class="flex justify-center gap-1 mt-1">
+        <KeyButton 
+          char="゛" 
+          @click="() => applySpecialChar('dakuten')" 
+          :buttonClass="'btn-3d-green-medium text-xs'" 
+          title="Dakuten - Convierte か→が, さ→ざ, etc."
+        />
+        <KeyButton 
+          char="゜" 
+          @click="() => applySpecialChar('handakuten')" 
+          :buttonClass="'btn-3d-green-medium text-xs'" 
+          title="Handakuten - Convierte は→ぱ, ひ→ぴ, etc."
+        />
         <KeyButton char="Limpiar" @click="handleClear()" :buttonClass="'btn-3d-danger text-xs'" />
       </div>
     </div>

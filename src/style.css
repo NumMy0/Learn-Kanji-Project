@@ -1485,57 +1485,33 @@
   box-shadow: 0 0 0 2px var(--color-Night), 0 0 var(--color-RichBlack);
 }
 
-/* Modales en modo oscuro */
-[data-theme="dark"] .fixed.inset-0.bg-platinum {
-  background-color: var(--theme-overlay) !important;
-}
-
-[data-theme="dark"] .rounded-3xl[style*="background-color: var(--color-snow)"] {
-  background-color: var(--theme-surface) !important;
-  border-color: var(--theme-border) !important;
-}
-
-/* Elementos decorativos con paleta azul */
-[data-theme="dark"] [style*="color: var(--color-MossGreen)"] {
-  color: var(--color-SapphireBlue) !important;
-}
-
-[data-theme="dark"] [style*="color: var(--color-FernGreen)"] {
-  color: var(--color-ColumbianBlue) !important;
-}
-
-[data-theme="dark"] [style*="color: var(--color-HunterGree)"] {
-  color: var(--color-NonPhotoBlue) !important;
-}
-
-[data-theme="dark"] [style*="color: var(--color-DarkGreen)"] {
-  color: var(--color-ElectricBlue) !important;
-}
-
-/* Elementos de input y formularios */
-[data-theme="dark"] input[type="text"],
-[data-theme="dark"] input[type="radio"],
-[data-theme="dark"] input[type="checkbox"] {
-  background-color: var(--theme-surface-alt);
-  border-color: var(--color-SapphireBlue);
+/* Botón de regreso en modo oscuro */
+[data-theme="dark"] .btn-3d-green-back {
+  background: var(--color-SteelBlue);
   color: var(--theme-text-primary);
+  border-color: var(--color-airForceBlue);
 }
 
-[data-theme="dark"] input[type="text"]:focus {
-  border-color: var(--color-ElectricBlue);
-  box-shadow: 0 0 0 2px var(--color-SapphireBlue)40;
-}
-
-/* Scrollbars personalizadas para modo oscuro */
-[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
+[data-theme="dark"] .btn-3d-green-back:hover {
   background: var(--color-SapphireBlue);
 }
 
-[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-track {
-  background: var(--theme-surface);
+[data-theme="dark"] .btn-3d-green-back::before {
+  background: var(--color-airForceBlue);
+  box-shadow: 0 0 0 2px var(--color-YaleBlue), 0 0.625em 0 0 var(--color-OxfordBlue);
 }
 
-/* Cursor trail en modo oscuro - colores azules vibrantes */
-[data-theme="dark"] .cursor-trail {
-  filter: brightness(1.4) saturate(1.3) hue-rotate(180deg);
+[data-theme="dark"] .btn-3d-green-back:hover::before {
+  transform: translate3d(0, 0.65em, -1em);
+  box-shadow: 0 0 0 2px var(--color-YaleBlue), 0 0.5em 0 0 var(--color-OxfordBlue);
+}
+
+[data-theme="dark"] .btn-3d-green-back:active {
+  background: var(--color-airForceBlue);
+  transform: translate(0, 0.125em);
+}
+
+[data-theme="dark"] .btn-3d-green-back:active::before {
+  transform: translate3d(0, 0, -1em);
+  box-shadow: 0 0 0 2px var(--color-YaleBlue), 0 0 var(--color-OxfordBlue);
 }
