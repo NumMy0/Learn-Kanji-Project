@@ -8,6 +8,7 @@ import { useTheme } from '../composables/useTheme.js';
 import { useCursorTrail } from '../composables/useCursorTrail.js';
 import { useKanjiValidation } from '../composables/useKanjiValidation.js';
 import { useJapaneseKeyboard } from '../composables/useJapaneseKeyboard.js';
+import { useI18n } from '../composables/useI18n.js';
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
 const { animateIn } = useMotion();
@@ -45,6 +46,7 @@ const props = defineProps({
 // Usar los composables de validación y teclado
 const validation = useKanjiValidation(props);
 const keyboard = useJapaneseKeyboard();
+const { t, tInterpolate, toggleLanguage, languageFlag, languageName } = useI18n();
 
 // Estados adicionales
 const studyMode = ref(false);
@@ -247,7 +249,7 @@ onUnmounted(() => {
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2zm0 0l7 5 7-5"></path>
         </svg>
-        キーボード
+        {{ t('keyboard') }}
       </button>
 
       <!-- Botón de modo estudio -->
@@ -258,17 +260,26 @@ onUnmounted(() => {
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
         </svg>
-        {{ studyMode ? 'Practicar' : 'Estudiar' }}
+        {{ studyMode ? t('practice') : t('study') }}
       </button>
     </div>
 
     <!-- Controles superiores (sonido y tema) -->
     <div class="fixed top-6 right-6 z-20 flex gap-3">
+      <!-- Botón de cambio de idioma -->
+      <button
+        @click="() => { toggleLanguage(); playButtonClick(); }"
+        class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center gap-2 pointer-events-auto"
+        :title="t('languageTooltip')"
+      >
+        <span class="text-lg">{{ languageFlag }}</span>
+      </button>
+      
       <!-- Botón de tema -->
       <button
         @click="() => { toggleTheme(); playButtonClick(); }"
         class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center pointer-events-auto"
-        :title="`Tema: ${currentTheme} - Click para cambiar`"
+        :title="tInterpolate('themeTooltip', { theme: currentTheme })"
       >
         <!-- Icono de sol (tema claro) -->
         <svg v-if="themeIcon === 'light'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +299,7 @@ onUnmounted(() => {
       <button
         @click="() => { toggleSound(); playButtonClick(); }"
         class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center pointer-events-auto"
-        :title="soundEnabled ? 'Sonido activado - Click para desactivar' : 'Sonido desactivado - Click para activar'"
+        :title="soundEnabled ? t('soundOnTooltip') : t('soundOffTooltip')"
       >
         <svg v-if="soundEnabled" xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-music"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M13 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" /></svg>
         <svg v-else class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -310,7 +321,7 @@ onUnmounted(() => {
             <!-- Progreso -->
             <div v-if="!studyMode && attempts > 0" class="mb-6">
               <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-azulIndigo">Progreso</span>
+                <span class="text-sm font-medium text-azulIndigo">{{ t('progress') }}</span>
                 <span class="text-sm text-Aonobi">{{ attempts }}/{{ maxAttempts }}</span>
               </div>
               <div class="w-full bg-GrisNeutro rounded-full h-2">
@@ -341,7 +352,7 @@ onUnmounted(() => {
                     </svg>
                   </div>
                   <div>
-                    <p class="text-sm font-medium text-azulIndigo">Significado</p>
+                    <p class="text-sm font-medium text-azulIndigo">{{ t('meaning') }}</p>
                     <p class="text-lg font-semibold text-grisTinta">{{ CorrectMeaning }}</p>
                   </div>
                 </div>
@@ -358,7 +369,7 @@ onUnmounted(() => {
                       </svg>
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-azulIndigo">Lectura On (音読み)</p>
+                      <p class="text-sm font-medium text-azulIndigo">{{ t('onReading') }}</p>
                       <p class="text-lg font-semibold text-grisTinta">{{ CorrectReadingOn }}</p>
                     </div>
                   </div>
@@ -373,7 +384,7 @@ onUnmounted(() => {
                       </svg>
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-azulIndigo">Lectura Kun (訓読み)</p>
+                      <p class="text-sm font-medium text-azulIndigo">{{ t('kunReading') }}</p>
                       <p class="text-lg font-semibold text-grisTinta">{{ CorrectReadingKun }}</p>
                     </div>
                   </div>
@@ -390,9 +401,9 @@ onUnmounted(() => {
                   <svg class="w-5 h-5 text-cardinal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                   </svg>
-                  <span class="font-medium text-firebrick">Pista</span>
+                  <span class="font-medium text-firebrick">{{ t('hint') }}</span>
                 </div>
-                <p class="text-cardinal">Las lecturas comienzan con: <span class="font-bold">{{ getHint() }}</span></p>
+                <p class="text-cardinal">{{ tInterpolate('hintText', { hint: getHint() }) }}</p>
               </div>
 
               <!-- Inputs para las respuestas (solo mostrar campos disponibles) -->
@@ -401,14 +412,14 @@ onUnmounted(() => {
                   <!-- Input de significado - solo si está disponible -->
                   <div v-if="meaningAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
-                      Significado
+                      {{ t('meaning') }}
                     </label>
                     <input
                       v-model="userInputMeaning"
                       @focus="setActiveInputHandler('meaning')"
                       @keyup.enter="validateAnswer"
                       type="text"
-                      placeholder="Escribe el significado..."
+                      :placeholder="t('meaningPlaceholder')"
                       class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-MossGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                       :class="{ 
                         'border-cardinal bg-coquelicot/10': isCorrect === false,
@@ -420,14 +431,14 @@ onUnmounted(() => {
                   <!-- Input de lectura On - solo si está disponible -->
                   <div v-if="onReadingAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
-                      Lectura On (音読み)
+                      {{ t('onReading') }}
                     </label>
                     <input
                       v-model="userInputOn"
                       @focus="setActiveInputHandler('on')"
                       @keyup.enter="validateAnswer"
                       type="text"
-                      placeholder="Escribe la lectura On..."
+                      :placeholder="t('onReadingPlaceholder')"
                       class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-FernGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                       :class="{ 
                         'border-cardinal bg-coquelicot/10': isCorrect === false,
@@ -439,14 +450,14 @@ onUnmounted(() => {
                   <!-- Input de lectura Kun - solo si está disponible -->
                   <div v-if="kunReadingAvailable" class="space-y-2">
                     <label class="block text-sm font-medium text-grisTinta">
-                      Lectura Kun (訓読み)
+                      {{ t('kunReading') }}
                     </label>
                     <input
                       v-model="userInputKun"
                       @focus="setActiveInputHandler('kun')"
                       @keyup.enter="validateAnswer"
                       type="text"
-                      placeholder="Escribe la lectura Kun..."
+                      :placeholder="t('kunReadingPlaceholder')"
                       class="error-shake w-full px-4 py-3 border border-timberWolf rounded-xl focus:ring-2 focus:ring-HunterGreen focus:border-transparent outline-none transition-all duration-200 text-lg"
                       :class="{ 
                         'border-cardinal bg-coquelicot/10': isCorrect === false,
@@ -473,10 +484,13 @@ onUnmounted(() => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                   </div>
-                  <h3 class="text-2xl font-bold text-FernGreen mb-2">¡Correcto!</h3>
+                  <h3 class="text-2xl font-bold text-FernGreen mb-2">{{ t('correct') }}</h3>
                   <div class="text-grisTinta space-y-1">
-                    <p>Has acertado {{ matchedReadingType }}</p>
-                    <p>en {{ attempts }} {{ attempts === 1 ? 'intento' : 'intentos' }}</p>
+                    <p>{{ tInterpolate('correctResult', { type: matchedReadingType }) }}</p>
+                    <p>{{ tInterpolate('correctAttempts', { 
+                      count: attempts, 
+                      attempts: attempts === 1 ? t('attempt') : t('attempts') 
+                    }) }}</p>
                   </div>
                 </div>
                 
@@ -486,7 +500,7 @@ onUnmounted(() => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                   </div>
-                  <h3 class="text-2xl font-bold text-cardinal mb-2">Incorrecto</h3>
+                  <h3 class="text-2xl font-bold text-cardinal mb-2">{{ t('incorrect') }}</h3>
                   <div class="text-grisTinta space-y-2">
                     <p class="text-cardinal font-medium">{{ matchedReadingType }}</p>
                   </div>
@@ -496,7 +510,7 @@ onUnmounted(() => {
                   @click="resetCard"
                   class="btn-3d btn-3d-green-light"
                 >
-                  Intentar de nuevo
+                  {{ t('tryAgain') }}
                 </button>
                 
                 <!-- Botones de navegación para subniveles -->
@@ -505,25 +519,25 @@ onUnmounted(() => {
                     @click="goToPreviousKanjiAction"
                     :disabled="loadingNavigation"
                     class="btn-3d btn-3d-green-light flex-1 text-sm"
-                    title="Kanji anterior"
+                    :title="t('previous')"
                   >
-                    ⮜ Anterior
+                    ⮜ {{ t('previous') }}
                   </button>
                   <button
                     @click="goToRandomKanjiManual"
                     :disabled="loadingNavigation"
                     class="btn-3d btn-3d-green-medium flex-1 text-sm"
-                    title="Kanji aleatorio"
+                    :title="t('random')"
                   >
-                    🎲 Aleatorio
+                    🎲 {{ t('random') }}
                   </button>
                   <button
                     @click="goToNextKanjiManual"
                     :disabled="loadingNavigation"
                     class="btn-3d btn-3d-green-light flex-1 text-sm"
-                    title="Siguiente kanji"
+                    :title="t('next')"
                   >
-                    Siguiente ⮞
+                    {{ t('next') }} ⮞
                   </button>
                 </div>
                 
@@ -533,17 +547,17 @@ onUnmounted(() => {
                     @click="goToRandomKanjiManual"
                     :disabled="loadingNavigation"
                     class="btn-3d btn-3d-green-medium flex-1 text-sm"
-                    title="Kanji aleatorio"
+                    :title="t('random')"
                   >
-                    🎲 Aleatorio
+                    🎲 {{ t('random') }}
                   </button>
                   <button
                     @click="goToNextKanjiManual"
                     :disabled="loadingNavigation"
                     class="btn-3d btn-3d-green-light flex-1 text-sm"
-                    title="Siguiente kanji"
+                    :title="t('next')"
                   >
-                    Siguiente ⮞
+                    {{ t('next') }} ⮞
                   </button>
                 </div>
                 
@@ -572,9 +586,9 @@ onUnmounted(() => {
                   <svg class="w-5 h-5 text-FernGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                   </svg>
-                  <span class="font-medium text-HunterGree">Modo Estudio</span>
+                  <span class="font-medium text-HunterGree">{{ t('studyMode') }}</span>
                 </div>
-                <p class="text-FernGreen text-sm">Estudia el kanji con toda la información visible. Cambia a modo "Practicar" cuando estés listo.</p>
+                <p class="text-FernGreen text-sm">{{ t('studyModeDescription') }}</p>
               </div>
             </div>
 

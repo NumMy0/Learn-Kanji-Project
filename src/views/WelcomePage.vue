@@ -1,285 +1,88 @@
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useMotion } from '../composables/useMotion.js';
 import { useKanji } from '../composables/useKanji.js';
 import { useSounds } from '../composables/useSounds.js';
 import { useTheme } from '../composables/useTheme.js';
-import { useRouter } from 'vue-router';
+import { useCursorTrail } from '../composables/useCursorTrail.js';
+import { useModals } from '../composables/useModals.js';
+import { useLevelSelection } from '../composables/useLevelSelection.js';
+import { useJLPTLevels } from '../composables/useJLPTLevels.js';
+import { useWelcomeAnimations } from '../composables/useWelcomeAnimations.js';
+import { useI18n } from '../composables/useI18n.js';
 
-const { animateIn, animateLoading } = useMotion();
+const router = useRouter();
+
+// Usar composables
+const { animateIn } = useMotion();
 const { getSublevelsInfo } = useKanji();
 const { playButtonClick, soundEnabled, toggleSound } = useSounds();
 const { currentTheme, isDarkMode, themeIcon, toggleTheme, setTheme } = useTheme();
-const router = useRouter();
+const { cursorTrails, initCursorTrail, cleanupCursorTrail } = useCursorTrail();
+const { kanjiLevels } = useJLPTLevels();
+const { playWelcomeAnimations } = useWelcomeAnimations(animateIn);
+const { t, tInterpolate, toggleLanguage, languageFlag, languageName } = useI18n();
 
-// Estados de los modales
-const showConfigModal = ref(false);
-const showGuideModal = ref(false);
-const showAboutModal = ref(false);
-const showSublevelModal = ref(false);
+// Usar composable de modales
+const {
+  showConfigModal,
+  showGuideModal,
+  showAboutModal,
+  showSublevelModal,
+  openConfigModal,
+  openGuideModal,
+  openAboutModal,
+  openSublevelModal,
+  closeModal,
+  handleKeydown
+} = useModals();
 
-// Estado para subniveles
-const selectedLevel = ref('');
-const availableSublevels = ref([]);
-const loadingSublevels = ref(false);
+// Usar composable de selección de niveles
+const {
+  selectedLevel,
+  availableSublevels,
+  loadingSublevels,
+  handleLevelSelection,
+  selectSublevel
+} = useLevelSelection(getSublevelsInfo, router);
 
-// Funciones para manejar modales
-const openConfigModal = () => {
-  playButtonClick();
-  showConfigModal.value = true;
+// Funciones wrapper para pasar dependencias a los composables
+const handleLevelSelectionWrapper = (levelItem) => {
+  handleLevelSelection(levelItem, playButtonClick, openSublevelModal);
 };
 
-const openGuideModal = () => {
-  playButtonClick();
-  showGuideModal.value = true;
+const selectSublevelWrapper = (sublevel) => {
+  selectSublevel(sublevel, playButtonClick, closeModal);
 };
 
-const openAboutModal = () => {
-  playButtonClick();
-  showAboutModal.value = true;
+const openConfigModalWrapper = () => {
+  openConfigModal(playButtonClick);
 };
 
-const closeModal = () => {
-  showConfigModal.value = false;
-  showGuideModal.value = false;
-  showAboutModal.value = false;
-  showSublevelModal.value = false;
+const openGuideModalWrapper = () => {
+  openGuideModal(playButtonClick);
 };
 
-// Función para manejar selección de nivel
-const handleLevelSelection = async (levelItem) => {
-  playButtonClick();
-  const level = levelItem.level.toLowerCase();
-  
-  try {
-    // Obtener información de subniveles para el nivel seleccionado
-    const info = await getSublevelsInfo(level);
-    
-    // Si tiene más de un subnivel, mostrar modal de selección
-    if (info.totalSublevels > 1) {
-      selectedLevel.value = level;
-      await loadSublevels(level);
-      showSublevelModal.value = true;
-    } else {
-      // Si solo tiene un subnivel, navegar directamente
-      router.push(`/kanji/${level}`);
-    }
-  } catch (error) {
-    console.error('Error checking sublevels for level:', level, error);
-    // En caso de error, navegar directamente
-    router.push(`/kanji/${level}`);
-  }
+const openAboutModalWrapper = () => {
+  openAboutModal(playButtonClick);
 };
 
-// Función para cargar subniveles
-const loadSublevels = async (level) => {
-  try {
-    loadingSublevels.value = true;
-    const info = await getSublevelsInfo(level);
-    
-    availableSublevels.value = [];
-    for (let i = 1; i <= info.totalSublevels; i++) {
-      const startIndex = (i - 1) * 100;
-      const endIndex = Math.min(startIndex + 100, info.totalKanjis);
-      const kanjiCount = endIndex - startIndex;
-      
-      // Determinar dificultad basada en el subnivel
-      let difficulty = 'Básico';
-      if (i > Math.ceil(info.totalSublevels / 3)) {
-        difficulty = 'Avanzado';
-      } else if (i > 1) {
-        difficulty = 'Intermedio';
-      }
-      
-      availableSublevels.value.push({
-        sublevel: i,
-        name: `Subnivel ${i}`,
-        description: `Kanjis ${startIndex + 1}-${endIndex}`,
-        kanjiCount: kanjiCount,
-        difficulty: difficulty
-      });
-    }
-  } catch (error) {
-    console.error('Error loading sublevels:', error);
-  } finally {
-    loadingSublevels.value = false;
-  }
-};
-
-// Función para seleccionar subnivel
-const selectSublevel = (sublevel) => {
-  playButtonClick();
-  router.push(`/kanji/${selectedLevel.value}?sublevel=${sublevel}`);
-  closeModal();
-};
-
-// Cerrar modal al presionar Escape
-// Estados para cursor trail effect
-const cursorTrails = ref([]);
-const trailId = ref(0);
-const lastMousePosition = ref({ x: 0, y: 0 });
-const mouseSpeed = ref(0);
-
-// Función para crear cursor trail effect
-const createCursorTrail = (e) => {
-  // Calcular velocidad del mouse
-  const deltaX = e.clientX - lastMousePosition.value.x;
-  const deltaY = e.clientY - lastMousePosition.value.y;
-  mouseSpeed.value = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-  
-  lastMousePosition.value = { x: e.clientX, y: e.clientY };
-  
-  // Solo crear trail si el mouse se está moviendo
-  if (mouseSpeed.value > 2) {
-    // Colores según el tema
-    const lightColors = [
-      '#90A955', // MossGreen
-      '#4F772D', // FernGreen
-      '#7FB069', // Asparagus
-      '#56876D'  // Viridian
-    ];
-    
-    const darkColors = [
-      '#4F98CD', // ColumbianBlue
-      '#2E5BBA', // SapphireBlue
-      '#15457B', // PrussianBlue
-      '#1E3A5F'  // SpaceCadet
-    ];
-    
-    const colors = isDarkMode.value ? darkColors : lightColors;
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    const size = Math.min(6 + mouseSpeed.value * 0.3, 16);
-    
-    const trail = {
-      id: trailId.value++,
-      x: e.clientX,
-      y: e.clientY,
-      life: 1.0,
-      size: size,
-      color: randomColor,
-      blur: Math.random() * 2 + 1
-    };
-    
-    cursorTrails.value.push(trail);
-    
-    // Limitar el número de trails basado en la velocidad
-    const maxTrails = Math.min(15, 8 + Math.floor(mouseSpeed.value * 0.2));
-    if (cursorTrails.value.length > maxTrails) {
-      cursorTrails.value.shift();
-    }
-  }
-};
-
-// Función para animar y actualizar trails
-const updateTrails = () => {
-  cursorTrails.value = cursorTrails.value.filter(trail => {
-    trail.life -= 0.08;
-    return trail.life > 0;
-  });
-  requestAnimationFrame(updateTrails);
-};
-
-const handleKeydown = (event) => {
-  if (event.key === 'Escape') {
-    closeModal();
-  }
-};
-
-const kanjiLevels = ref([
-  { 
-    level: 'JLPT-5', 
-    description: 'Nivel básico, para aquellos que desean aprender los fundamentos del japonés.',
-    kanji: '日本語',
-    color: 'from-verdeMatcha to-azulIndigo',
-    difficulty: 'Fácil',
-    estimated: '~80 kanjis'
-  },
-  { 
-    level: 'JLPT-4', 
-    description: 'Nivel intermedio, para quienes ya conocen lo básico.',
-    kanji: '学習',
-    color: 'from-airForceBlue to-Aonobi',
-    difficulty: 'Intermedio',
-    estimated: '~160 kanjis'
-  },
-  { 
-    level: 'JLPT-3', 
-    description: 'Nivel avanzado, para estudiantes con buen conocimiento de kanjis.',
-    kanji: '勉強',
-    color: 'from-coquelicot to-cardinal',
-    difficulty: 'Avanzado',
-    estimated: '~370 kanjis'
-  },
-  { 
-    level: 'JLPT-2', 
-    description: 'Nivel superior, para quienes buscan un dominio más profundo.',
-    kanji: '準備',
-    color: 'from-Benibana to-firebrick',
-    difficulty: 'Superior',
-    estimated: '~370 kanjis'
-  },
-  { 
-    level: 'JLPT-1', 
-    description: 'Nivel experto, para quienes desean alcanzar la fluidez total.',
-    kanji: '完璧',
-    color: 'from-RojoCarmesi to-cardinal',
-    difficulty: 'Experto',
-    estimated: '~1200 kanjis'
-  }, 
-  {
-    level: 'Configuración',
-    description: 'Ajustes de la aplicación, personaliza tu experiencia de aprendizaje.',
-    kanji: '設定',
-    color: 'from-MossGreen to-HunterGree',
-    difficulty: 'Ajustes',
-    estimated: '',
-    isConfig: true
-  }
-]);
-
-// Función principal onMounted que combina animaciones y cursor trail
+// Lifecycle hooks
 onMounted(async () => {
-  // Event listeners para el teclado y cursor trail
+  // Event listeners para el teclado
   document.addEventListener('keydown', handleKeydown);
-  document.addEventListener('mousemove', createCursorTrail);
-  updateTrails();
   
-  await nextTick();
+  // Inicializar cursor trail
+  initCursorTrail();
   
-  // Animar título principal
-  animateIn('.main-title', {
-    y: [-50, 0],
-    opacity: [0, 1],
-    duration: 0.8,
-    easing: 'ease-out'
-  });
-  
-  // Animar subtítulo
-  setTimeout(() => {
-    animateIn('.subtitle', {
-      y: [30, 0],
-      opacity: [0, 1],
-      duration: 0.6,
-      easing: 'ease-out'
-    });
-  }, 200);
-  
-  // Animar cards con stagger
-  setTimeout(() => {
-    animateIn('.level-card', {
-      y: [50, 0],
-      opacity: [0, 1],
-      scale: [0.9, 1],
-      duration: 0.5,
-      easing: 'ease-out',
-      delay: (i) => i * 0.1
-    });
-  }, 400);
+  // Ejecutar animaciones de bienvenida
+  await playWelcomeAnimations();
 });
 
 onUnmounted(() => {
   document.removeEventListener('keydown', handleKeydown);
-  document.removeEventListener('mousemove', createCursorTrail);
+  cleanupCursorTrail();
 });
 </script>
 
@@ -307,11 +110,20 @@ onUnmounted(() => {
     </div>
     <!-- Controles superiores (sonido y tema) -->
     <div class="fixed top-6 right-6 z-20 flex gap-3">
+      <!-- Botón de cambio de idioma -->
+      <button
+        @click="() => { toggleLanguage(); playButtonClick(); }"
+        class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center gap-2"
+        :title="t('languageTooltip')"
+      >
+        <span class="text-lg">{{ languageFlag }}</span>
+      </button>
+      
       <!-- Botón de tema -->
       <button
         @click="() => { toggleTheme(); playButtonClick(); }"
         class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center"
-        :title="`Tema: ${currentTheme} - Click para cambiar`"
+        :title="tInterpolate('themeTooltip', { theme: currentTheme })"
       >
         <!-- Icono de sol (tema claro) -->
         <svg v-if="themeIcon === 'light'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -331,7 +143,7 @@ onUnmounted(() => {
       <button
         @click="() => { toggleSound(); playButtonClick(); }"
         class="btn-3d btn-3d-green-floating w-full h-full flex items-center justify-center"
-        :title="soundEnabled ? 'Sonido activado - Click para desactivar' : 'Sonido desactivado - Click para activar'"
+        :title="soundEnabled ? t('soundOnTooltip') : t('soundOffTooltip')"
       >
         <svg v-if="soundEnabled" xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-music"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M13 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" /></svg>
         <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,17 +169,17 @@ onUnmounted(() => {
           漢字を学ぼう
         </h1>
         <h2 class="text-4xl md:text-5xl font-semibold mb-4" style="color: var(--theme-text-accent);">
-          Aprende Kanji
+          {{ t('mainTitle') }}
         </h2>
       </div>
       
       <!-- Subtítulo -->
       <div class="subtitle mb-12">
         <p class="text-xl md:text-2xl mb-4 leading-relaxed" style="color: var(--theme-text-secondary);">
-          Domina los caracteres japoneses de forma interactiva
+          {{ t('subtitle') }}
         </p>
         <p class="text-lg" style="color: var(--theme-text-accent);">
-          Selecciona tu nivel JLPT y comienza tu viaje hacia la fluidez
+          {{ t('levelSelection') }}
         </p>
       </div>
 
@@ -377,7 +189,7 @@ onUnmounted(() => {
           <!-- Botón de configuración especial -->
           <button
             v-if="item.isConfig"
-            @click="openConfigModal"
+            @click="openConfigModalWrapper"
             class="level-card btn-3d btn-3d-green-config text-center block"
           >
             <!-- Kanji decorativo -->
@@ -404,7 +216,7 @@ onUnmounted(() => {
           <!-- Enlaces regulares de niveles JLPT -->
           <button
             v-else
-            @click="handleLevelSelection(item)"
+            @click="handleLevelSelectionWrapper(item)"
             :class="`level-card btn-3d btn-3d-${item.level.toLowerCase().replace('-', '')} text-center block w-full`"
           >
             <!-- Kanji decorativo -->
@@ -432,11 +244,11 @@ onUnmounted(() => {
       
       <!-- Botones de acción adicionales -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center p-3">
-        <button @click="openGuideModal" class="btn-3d btn-3d-green-light">
-          Guía de uso
+        <button @click="openGuideModalWrapper" class="btn-3d btn-3d-green-light">
+          {{ t('usageGuide') }}
         </button>
-        <button @click="openAboutModal" class="btn-3d btn-3d-green-medium">
-          Acerca del proyecto
+        <button @click="openAboutModalWrapper" class="btn-3d btn-3d-green-medium">
+          {{ t('aboutProject') }}
         </button>
       </div>
 
@@ -448,22 +260,22 @@ onUnmounted(() => {
            style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
           <div>
-            <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Selecciona un Subnivel</h3>
-            <p class="text-sm mt-1" style="color: var(--theme-text-secondary);">{{ selectedLevel.toUpperCase() }} está dividido en subniveles para facilitar el aprendizaje</p>
+            <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">{{ t('selectSublevel') }}</h3>
+            <p class="text-sm mt-1" style="color: var(--theme-text-secondary);">{{ selectedLevel.toUpperCase() }} {{ t('sublevelDescription') }}</p>
           </div>
           <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
         
         <div v-if="loadingSublevels" class="text-center py-8">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style="border-color: var(--theme-border);"></div>
-          <p style="color: var(--theme-text-secondary);">Cargando subniveles...</p>
+          <p style="color: var(--theme-text-secondary);">{{ t('loadingSublevels') }}</p>
         </div>
         
         <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             v-for="subLevel in availableSublevels"
             :key="subLevel.sublevel"
-            @click="selectSublevel(subLevel.sublevel)"
+            @click="selectSublevelWrapper(subLevel.sublevel)"
             class="btn-3d btn-3d-green-sublevel text-left p-6 hover:scale-105 transition-transform duration-200"
           >
             <!-- Número del subnivel -->
@@ -485,7 +297,7 @@ onUnmounted(() => {
             <!-- Información adicional -->
             <div class="flex justify-between items-center text-xs">
               <span style="color: var(--theme-text-accent);">
-                {{ subLevel.kanjiCount }} kanjis
+                {{ subLevel.kanjiCount }} {{ t('kanjis') }}
               </span>
               <span class="px-2 py-1 rounded" 
                     style="background-color: var(--theme-border-light); color: var(--theme-text-primary);">
@@ -497,7 +309,7 @@ onUnmounted(() => {
 
         <div class="mt-6 flex gap-3">
           <button @click="closeModal" class="btn-3d btn-3d-green-light flex-1">
-            Cancelar
+            {{ t('cancel') }}
           </button>
         </div>
       </div>
@@ -508,14 +320,14 @@ onUnmounted(() => {
       <div class="rounded-3xl border-2 p-8 max-w-md w-full max-h-[80vh] overflow-y-auto custom-scrollbar" 
            style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Configuración</h3>
+          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">{{ t('configuration') }}</h3>
           <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
         
         <div class="space-y-6">
           <!-- Configuración de sonido -->
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">Audio</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('audio') }}</h4>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input 
@@ -525,36 +337,36 @@ onUnmounted(() => {
                   :checked="soundEnabled"
                   @change="toggleSound"
                 >
-                <span style="color: var(--theme-text-primary);">Efectos de sonido</span>
+                <span style="color: var(--theme-text-primary);">{{ t('soundEffects') }}</span>
               </label>
               <div class="text-xs mt-1" style="color: var(--theme-text-secondary);">
-                Incluye sonidos de botones, respuestas correctas e incorrectas
+                {{ t('soundDescription') }}
               </div>
             </div>
           </div>
 
           <!-- Configuración de dificultad -->
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">Dificultad</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('difficulty') }}</h4>
             <div class="space-y-2">
               <label class="flex items-center">
                 <input type="radio" name="difficulty" value="easy" class="mr-3" style="accent-color: var(--theme-border);">
-                <span style="color: var(--theme-text-primary);">Mostrar pistas adicionales</span>
+                <span style="color: var(--theme-text-primary);">{{ t('showHints') }}</span>
               </label>
               <label class="flex items-center">
                 <input type="radio" name="difficulty" value="normal" class="mr-3" style="accent-color: var(--theme-border);" checked>
-                <span style="color: var(--theme-text-primary);">Dificultad estándar</span>
+                <span style="color: var(--theme-text-primary);">{{ t('standardDifficulty') }}</span>
               </label>
               <label class="flex items-center">
                 <input type="radio" name="difficulty" value="hard" class="mr-3" style="accent-color: var(--theme-border);">
-                <span style="color: var(--theme-text-primary);">Modo experto (sin pistas)</span>
+                <span style="color: var(--theme-text-primary);">{{ t('expertMode') }}</span>
               </label>
             </div>
           </div>
 
           <!-- Configuración de tema -->
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">Tema</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('theme') }}</h4>
             <div class="space-y-2">
               <label class="flex items-center cursor-pointer">
                 <input 
@@ -566,7 +378,7 @@ onUnmounted(() => {
                   :checked="currentTheme === 'light'"
                   @change="setTheme('light')"
                 >
-                <span style="color: var(--theme-text-primary);">Tema claro</span>
+                <span style="color: var(--theme-text-primary);">{{ t('lightTheme') }}</span>
               </label>
               <label class="flex items-center cursor-pointer">
                 <input 
@@ -578,7 +390,7 @@ onUnmounted(() => {
                   :checked="currentTheme === 'dark'"
                   @change="setTheme('dark')"
                 >
-                <span style="color: var(--theme-text-primary);">Tema oscuro</span>
+                <span style="color: var(--theme-text-primary);">{{ t('darkTheme') }}</span>
               </label>
               <label class="flex items-center cursor-pointer">
                 <input 
@@ -590,10 +402,10 @@ onUnmounted(() => {
                   :checked="currentTheme === 'system'"
                   @change="setTheme('system')"
                 >
-                <span style="color: var(--theme-text-primary);">Seguir sistema</span>
+                <span style="color: var(--theme-text-primary);">{{ t('systemTheme') }}</span>
               </label>
               <div class="text-xs mt-2" style="color: var(--theme-text-secondary);">
-                Actual: {{ isDarkMode ? 'Oscuro' : 'Claro' }}
+                {{ t('currentTheme') }}: {{ isDarkMode ? t('dark') : t('light') }}
               </div>
             </div>
           </div>
@@ -601,10 +413,10 @@ onUnmounted(() => {
 
         <div class="mt-8 flex gap-3">
           <button @click="() => { playButtonClick(); closeModal(); }" class="btn-3d btn-3d-green-medium flex-1">
-            Guardar cambios
+            {{ t('saveChanges') }}
           </button>
           <button @click="() => { playButtonClick(); closeModal(); }" class="btn-3d btn-3d-green-light">
-            Cancelar
+            {{ t('cancel') }}
           </button>
         </div>
       </div>
@@ -615,7 +427,7 @@ onUnmounted(() => {
       <div class="rounded-3xl border-2 p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
            style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Guía de uso</h3>
+          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">{{ t('usageGuideTitle') }}</h3>
           <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
 
@@ -623,42 +435,42 @@ onUnmounted(() => {
         <div class="space-y-6" style="color: var(--theme-text-secondary);">
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Notas</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('notes') }}</h4>
             <ul class="list-disc text-left space-y-2 list-inside">
-              <p class="mb-2">• Esta aplicación es un proyecto personal y no está afiliada a ninguna institución oficial de enseñanza de japonés.</p>
-              <p class="mb-2">• Para reportar errores o sugerencias, escríbeme un correo.</p>
-              <p class="mb-2">• Los significados están en inglés dado que es el idioma de referencia para el aprendizaje de kanji.</p>
-              <p class="mb-2">• Para próximas actualizaciones de los significados, puedes dejarme un correo.</p>
-              <p class="mb-2">• ¡Gracias por usar la aplicación y si te resultó útil puedes dejarme un café en <a href="https://www.buymeacoffee.com/tu_usuario" target="_blank" style="color: var(--theme-text-accent);">Buy Me a Coffee</a>!</p>
+              <p class="mb-2">{{ t('note1') }}</p>
+              <p class="mb-2">{{ t('note2') }}</p>
+              <p class="mb-2">{{ t('note3') }}</p>
+              <p class="mb-2">{{ t('note4') }}</p>
+              <p class="mb-2">{{ t('note5') }} <a href="https://www.buymeacoffee.com/tu_usuario" target="_blank" style="color: var(--theme-text-accent);">Buy Me a Coffee</a>!</p>
             </ul>
           </div>
           
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">📚 Sistema de aprendizaje</h4>
-            <p class="mb-2"><strong>Lecturas On (音読み):</strong> Lectura china del kanji</p>
-            <p class="mb-2"><strong>Lecturas Kun (訓読み):</strong> Lectura japonesa nativa</p>
-            <p>Puedes usar el teclado japonés virtual para practicar la escritura</p>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('learningSystem') }}</h4>
+            <p class="mb-2"><strong>{{ t('onReadings') }}</strong></p>
+            <p class="mb-2"><strong>{{ t('kunReadings') }}</strong></p>
+            <p>{{ t('keyboardUsage') }}</p>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">⌨️ Teclado japonés</h4>
-            <p class="mb-2">• Haz clic en キーボード para abrir el teclado virtual</p>
-            <p class="mb-2">• Usa las teclas para escribir en hiragana y katakana</p>
-            <p class="mb-2">• El teclado se adapta automáticamente al campo que estés editando</p>
-            <p>• Presiona "Cerrar" para ocultar el teclado</p>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('japaneseKeyboard') }}</h4>
+            <p class="mb-2">{{ t('keyboardTip1') }}</p>
+            <p class="mb-2">{{ t('keyboardTip2') }}</p>
+            <p class="mb-2">{{ t('keyboardTip3') }}</p>
+            <p>{{ t('keyboardTip4') }}</p>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">💡 Consejos</h4>
-            <p class="mb-2">• Practica regularmente para mejorar la retención</p>
-            <p class="mb-2">• No te preocupes por los errores, son parte del aprendizaje</p>
-            <p>• Usa la configuración para ajustar la dificultad a tu nivel</p>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('tips') }}</h4>
+            <p class="mb-2">{{ t('tip1') }}</p>
+            <p class="mb-2">{{ t('tip2') }}</p>
+            <p>{{ t('tip3') }}</p>
           </div>
         </div>
 
         <div class="mt-8">
           <button @click="closeModal" class="btn-3d btn-3d-blue w-full">
-            ¡Entendido!
+            {{ t('understood') }}
           </button>
         </div>
       </div>
@@ -669,7 +481,7 @@ onUnmounted(() => {
       <div class="rounded-3xl border-2 p-8 max-w-lg w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
            style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
         <div class="flex justify-between items-center mb-6">
-          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">Acerca del proyecto</h3>
+          <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">{{ t('aboutProjectTitle') }}</h3>
           <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>
         
@@ -677,25 +489,25 @@ onUnmounted(() => {
           <div class="text-6xl mb-4" style="color: var(--theme-text-accent);">漢字を学ぼう</div>
           
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Sobre la aplicación</h4>
-            <p class="mb-4">Una aplicación web interactiva diseñada para ayudar a estudiantes de japonés a aprender y practicar kanji de manera efectiva y divertida.</p>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('aboutApp') }}</h4>
+            <p class="mb-4">{{ t('aboutDescription') }}</p>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Características</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('features') }}</h4>
             <ul class="text-left space-y-2">
-              <li>• Organizado por niveles JLPT (N5 a N1)</li>
-              <li>• Teclado japonés virtual integrado</li>
-              <li>• Práctica de lecturas On y Kun</li>
-              <li>• Interfaz moderna y responsive</li>
-              <li>• Sistema de validación inteligente</li>
-              <li>• Modo oscuro y claro</li>
-              <li>• Accesible desde cualquier dispositivo</li>
+              <li>{{ t('feature1') }}</li>
+              <li>{{ t('feature2') }}</li>
+              <li>{{ t('feature3') }}</li>
+              <li>{{ t('feature4') }}</li>
+              <li>{{ t('feature5') }}</li>
+              <li>{{ t('feature6') }}</li>
+              <li>{{ t('feature7') }}</li>
             </ul>
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Tecnologías</h4>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('technologies') }}</h4>
             <div class="flex flex-wrap gap-2 justify-center">
               <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--theme-border); color: var(--theme-surface);">Vue 3</span>
               <span class="px-3 py-1 rounded-full text-sm font-semibold transition-transform duration-200 hover:scale-105 cursor-default" style="background-color: var(--theme-text-accent); color: var(--theme-surface);">Vite</span>
@@ -705,17 +517,17 @@ onUnmounted(() => {
           </div>
 
           <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">Versión</h4>
-            <p class="text-sm">v1.0.0 - Diciembre 2024</p>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-primary);">{{ t('version') }}</h4>
+            <p class="text-sm">{{ t('versionText') }}</p>
             <p class="text-xs mt-2" style="color: var(--theme-text-accent);">
-              Hecho con ❤️ para la comunidad de estudiantes de japonés
+              {{ t('madeWith') }}
             </p>
           </div>
         </div>
 
         <div class="mt-8">
           <button @click="closeModal" class="btn-3d btn-3d-red w-full">
-            Cerrar
+            {{ t('close') }}
           </button>
         </div>
       </div>
