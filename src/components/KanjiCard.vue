@@ -1,22 +1,23 @@
 <script setup>
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMotion } from '../composables/useMotion.js';
 import { useKanji } from '../composables/useKanji.js';
 import { useSounds } from '../composables/useSounds.js';
 import { useTheme } from '../composables/useTheme.js';
+import { useCursorTrail } from '../composables/useCursorTrail.js';
+import { useKanjiValidation } from '../composables/useKanjiValidation.js';
+import { useJapaneseKeyboard } from '../composables/useJapaneseKeyboard.js';
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
 const { animateIn } = useMotion();
 const route = useRoute();
 const { playButtonClick, playCorrectAnswer, playIncorrectAnswer, soundEnabled, toggleSound } = useSounds();
 const { currentTheme, isDarkMode, themeIcon, toggleTheme } = useTheme();
+const { cursorTrails, initCursorTrail, cleanupCursorTrail } = useCursorTrail();
 const { 
     sublevelData, 
     navigationData,
-    getNextKanji, 
-    getPreviousKanji, 
-    getRandomKanjiFromSublevel,
     goToNextKanji,
     goToPreviousKanji,
     goToRandomKanji
@@ -41,88 +42,45 @@ const props = defineProps({
     }
 });
 
-// Estados existentes
-const userInput = ref('');
-const userInputMeaning = ref('');
-const userInputOn = ref('');
-const userInputKun = ref('');
-const showAnswer = ref(false);
-const isCorrect = ref(null);
-const attempts = ref(0);
-const maxAttempts = 3;
-const showHint = ref(false);
-const studyMode = ref(false);
-const showKeyboard = ref(false);
-const matchedReadingType = ref('');
-const activeInput = ref('meaning'); // 'meaning', 'on' o 'kun'
+// Usar los composables de validación y teclado
+const validation = useKanjiValidation(props);
+const keyboard = useJapaneseKeyboard();
 
-// Estados para navegación
+// Estados adicionales
+const studyMode = ref(false);
 const loadingNavigation = ref(false);
 
-// Estados para cursor trail effect
-const cursorTrails = ref([]);
-const trailId = ref(0);
-const lastMousePosition = ref({ x: 0, y: 0 });
-const mouseSpeed = ref(0);
+// Funciones derivadas de los composables
+const {
+    userInputMeaning,
+    userInputOn,
+    userInputKun,
+    attempts,
+    showAnswer,
+    isCorrect,
+    matchedReadingType,
+    showHint,
+    maxAttempts,
+    meaningAvailable,
+    onReadingAvailable,
+    kunReadingAvailable,
+    allInputsFilled,
+    canValidateAnswer,
+    buttonText,
+    isButtonDisabled,
+    progressPercent,
+    getHint,
+    resetValidation
+} = validation;
 
-// Función para crear cursor trail effect
-const createCursorTrail = (e) => {
-  // Calcular velocidad del mouse
-  const deltaX = e.clientX - lastMousePosition.value.x;
-  const deltaY = e.clientY - lastMousePosition.value.y;
-  mouseSpeed.value = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-  
-  lastMousePosition.value = { x: e.clientX, y: e.clientY };
-  
-  // Solo crear trail si el mouse se está moviendo
-  if (mouseSpeed.value > 2) {
-    // Colores según el tema
-    const lightColors = [
-      '#90A955', // MossGreen
-      '#4F772D', // FernGreen
-      '#7FB069', // Asparagus
-      '#56876D'  // Viridian
-    ];
-    
-    const darkColors = [
-      '#4F98CD', // ColumbianBlue
-      '#2E5BBA', // SapphireBlue
-      '#15457B', // PrussianBlue
-      '#1E3A5F'  // SpaceCadet
-    ];
-    
-    const colors = isDarkMode.value ? darkColors : lightColors;
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    const size = Math.min(6 + mouseSpeed.value * 0.3, 16);
-    
-    const trail = {
-      id: trailId.value++,
-      x: e.clientX,
-      y: e.clientY,
-      life: 1.0,
-      size: size,
-      color: randomColor,
-      blur: Math.random() * 2 + 1
-    };
-    
-    cursorTrails.value.push(trail);
-    
-    // Limitar el número de trails basado en la velocidad
-    const maxTrails = Math.min(15, 8 + Math.floor(mouseSpeed.value * 0.2));
-    if (cursorTrails.value.length > maxTrails) {
-      cursorTrails.value.shift();
-    }
-  }
-};
-
-// Función para animar y actualizar trails
-const updateTrails = () => {
-  cursorTrails.value = cursorTrails.value.filter(trail => {
-    trail.life -= 0.08;
-    return trail.life > 0;
-  });
-  requestAnimationFrame(updateTrails);
-};
+const {
+    showKeyboard,
+    activeInput,
+    toggleKeyboard,
+    closeKeyboard,
+    setActiveInput,
+    setFirstAvailableInput
+} = keyboard;
 
 // Computed para verificar si estamos en modo subnivel
 const isInSublevelMode = computed(() => {
@@ -171,256 +129,17 @@ const goToRandomKanjiManual = async () => {
     }
 };
 
-
-// Computed para mostrar el progreso
-const progressPercent = computed(() => {
-    if (attempts.value === 0) return 0;
-    return Math.min((attempts.value / maxAttempts) * 100, 100);
-});
-
-// Computed para verificar si los datos del kanji están disponibles
-const kanjiDataAvailable = computed(() => {
-    return props.CorrectMeaning && 
-           props.CorrectReadingOn && 
-           props.CorrectReadingKun &&
-           !props.CorrectMeaning.includes('no disponible') &&
-           !props.CorrectReadingOn.includes('no disponible') &&
-           !props.CorrectReadingKun.includes('no disponible');
-});
-
-// Computed para verificar qué lecturas están disponibles individualmente
-const meaningAvailable = computed(() => {
-    return props.CorrectMeaning && !props.CorrectMeaning.includes('no disponible');
-});
-
-const onReadingAvailable = computed(() => {
-    return props.CorrectReadingOn && !props.CorrectReadingOn.includes('no disponible');
-});
-
-const kunReadingAvailable = computed(() => {
-    return props.CorrectReadingKun && !props.CorrectReadingKun.includes('no disponible');
-});
-
-console.log('Kanji:', props.Kanji);
-console.log('Correct Meaning:', props.CorrectMeaning);
-console.log('Correct Reading On:', props.CorrectReadingOn);
-console.log('Correct Reading Kun:', props.CorrectReadingKun);
-
-// Computed para verificar si todos los inputs disponibles están llenos
-const allInputsFilled = computed(() => {
-    let allFilled = true;
-    
-    // Verificar significado si está disponible
-    if (meaningAvailable.value) {
-        allFilled = allFilled && userInputMeaning.value.trim();
-    }
-    
-    // Verificar lectura On si está disponible
-    if (onReadingAvailable.value) {
-        allFilled = allFilled && userInputOn.value.trim();
-    }
-    
-    // Verificar lectura Kun si está disponible
-    if (kunReadingAvailable.value) {
-        allFilled = allFilled && userInputKun.value.trim();
-    }
-    
-    return allFilled;
-});
-
-// Computed para verificar si se puede validar la respuesta
-const canValidateAnswer = computed(() => {
-    // Al menos uno de los campos debe estar disponible
-    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
-    return allInputsFilled.value && hasAvailableData;
-});
-
-// Computed para el texto del botón
-const buttonText = computed(() => {
-    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
-    
-    if (!hasAvailableData) {
-        return 'No hay datos disponibles';
-    }
-    if (!allInputsFilled.value) {
-        return 'Completa todas las respuestas disponibles';
-    }
-    return 'Validar Respuestas';
-});
-
-// Computed para saber si el botón debe estar deshabilitado
-const isButtonDisabled = computed(() => {
-    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
-    return !allInputsFilled.value || !hasAvailableData;
-});
-
-// Función para normalizar respuestas (eliminar espacios, convertir a minúsculas, eliminar caracteres especiales)
-const normalizeText = (text) => {
-    if (!text || typeof text !== 'string') return '';
-    
-    // Convertir a minúsculas y eliminar espacios
-    let normalized = text.toLowerCase().trim().replace(/\s+/g, '');
-    
-    // Para lecturas japonesas, eliminar guiones, puntos, comas y otros caracteres especiales
-    // Mantener solo hiragana (ひらがな), katakana (カタカナ), letras, números
-    normalized = normalized.replace(/[-・。、～〜]/g, '');
-    
-    // Eliminar cualquier carácter que no sea letra, número, hiragana o katakana
-    normalized = normalized.replace(/[^\u3040-\u309F\u30A0-\u30FFa-zA-Z0-9]/g, '');
-    
-    return normalized;
-};
-
-// Función para validar la respuesta
+// Función para validar respuesta usando el composable
 const validateAnswer = () => {
-    // Reproducir sonido de clic del botón
-    playButtonClick();
-    
-    // Verificar que tenemos al menos un campo disponible
-    const hasAvailableData = meaningAvailable.value || onReadingAvailable.value || kunReadingAvailable.value;
-    if (!hasAvailableData) {
-        console.error('No hay datos del kanji disponibles para validar');
-        isCorrect.value = false;
-        matchedReadingType.value = 'No hay datos disponibles para validación';
-        showAnswer.value = true;
-        return;
-    }
-    
-    // Verificar que los inputs requeridos estén llenos
-    if ((meaningAvailable.value && !userInputMeaning.value.trim()) ||
-        (onReadingAvailable.value && !userInputOn.value.trim()) ||
-        (kunReadingAvailable.value && !userInputKun.value.trim())) {
-        return;
-    }
-    
-    attempts.value++;
-    
-    // Solo validar los campos que están disponibles
-    const correctAnswers = [];
-    const incorrectAnswers = [];
-    let allCorrect = true;
-    
-    // Validar significado si está disponible
-    if (meaningAvailable.value) {
-        const userAnswerMeaning = normalizeText(userInputMeaning.value);
-        const correctAnswerMeaning = normalizeText(props.CorrectMeaning);
-        const meaningCorrect = userAnswerMeaning === correctAnswerMeaning;
-        
-        console.log('Validando significado:', userAnswerMeaning, '===', correctAnswerMeaning, '?', meaningCorrect);
-        
-        if (meaningCorrect) {
-            correctAnswers.push('significado');
-        } else {
-            incorrectAnswers.push('significado');
-            allCorrect = false;
-        }
-    }
-    
-    // Validar lectura On si está disponible
-    if (onReadingAvailable.value) {
-        const userAnswerOn = normalizeText(userInputOn.value);
-        const correctAnswerOn = normalizeText(props.CorrectReadingOn);
-        const onCorrect = userAnswerOn === correctAnswerOn;
-        
-        console.log('Validando lectura On:', userAnswerOn, '===', correctAnswerOn, '?', onCorrect);
-        
-        if (onCorrect) {
-            correctAnswers.push('lectura On');
-        } else {
-            incorrectAnswers.push('lectura On');
-            allCorrect = false;
-        }
-    }
-    
-    // Validar lectura Kun si está disponible
-    if (kunReadingAvailable.value) {
-        const userAnswerKun = normalizeText(userInputKun.value);
-        const correctAnswerKun = normalizeText(props.CorrectReadingKun);
-        const kunCorrect = userAnswerKun === correctAnswerKun;
-        
-        console.log('Validando lectura Kun:', userAnswerKun, '===', correctAnswerKun, '?', kunCorrect);
-        
-        if (kunCorrect) {
-            correctAnswers.push('lectura Kun');
-        } else {
-            incorrectAnswers.push('lectura Kun');
-            allCorrect = false;
-        }
-    }
-    
-    // Determinar el resultado
-    if (allCorrect && correctAnswers.length > 0) {
-        matchedReadingType.value = correctAnswers.length === 1 
-            ? `${correctAnswers[0]} correcta`
-            : `todas las respuestas disponibles (${correctAnswers.join(', ')}) correctas`;
-        isCorrect.value = true;
-    } else {
-        if (correctAnswers.length > 0) {
-            matchedReadingType.value = `${correctAnswers.join(' y ')} correcta${correctAnswers.length > 1 ? 's' : ''}, pero ${incorrectAnswers.join(' y ')} incorrecta${incorrectAnswers.length > 1 ? 's' : ''}`;
-        } else {
-            matchedReadingType.value = `todas las respuestas disponibles incorrectas`;
-        }
-        isCorrect.value = false;
-    }
-    
-    if (isCorrect.value) {
-        showAnswer.value = true;
-        
-        // Reproducir sonido de respuesta correcta
-        playCorrectAnswer();
-        
-        // Animar éxito
-        animateIn('.success-animation', {
-            scale: [0.8, 1.2, 1],
-            opacity: [0, 1],
-            duration: 0.6,
-            easing: 'ease-out'
-        });
-    } else {
-        isCorrect.value = false;
-        
-        // Reproducir sonido de respuesta incorrecta
-        playIncorrectAnswer();
-        
-        if (attempts.value >= maxAttempts) {
-            showAnswer.value = true;
-        } else if (attempts.value === 2) {
-            showHint.value = true;
-        }
-        
-        // Animar error
-        animateIn('.error-shake', {
-            x: [-10, 10, -10, 10, 0],
-            duration: 0.5,
-            easing: 'ease-in-out'
-        });
-    }
+    validation.validateAnswer(playButtonClick, playCorrectAnswer, playIncorrectAnswer, animateIn);
 };
 
-// Función para resetear el estado
+// Función para resetear el estado completo
 const resetCard = () => {
     playButtonClick();
-    userInput.value = '';
-    userInputMeaning.value = '';
-    userInputOn.value = '';
-    userInputKun.value = '';
-    showAnswer.value = false;
-    isCorrect.value = null;
-    attempts.value = 0;
-    showHint.value = false;
+    resetValidation();
     studyMode.value = false;
-    matchedReadingType.value = '';
-    
-    // Establecer el input activo en el primer campo disponible
-    if (meaningAvailable.value) {
-        activeInput.value = 'meaning';
-    } else if (onReadingAvailable.value) {
-        activeInput.value = 'on';
-    } else if (kunReadingAvailable.value) {
-        activeInput.value = 'kun';
-    } else {
-        activeInput.value = 'meaning'; // fallback
-    }
+    setFirstAvailableInput({ meaningAvailable, onReadingAvailable, kunReadingAvailable });
 };
 
 // Función para alternar modo estudio
@@ -434,131 +153,32 @@ const toggleStudyMode = () => {
     }
 };
 
-// Función para obtener una pista
-const getHint = () => {
-    // Mostrar todas las respuestas como pista, pero parcialmente
-    const meaning = props.CorrectMeaning || '';
-    const onReading = props.CorrectReadingOn || '';
-    const kunReading = props.CorrectReadingKun || '';
-    
-    const meaningHint = meaning ? meaning.substring(0, Math.ceil(meaning.length / 2)) + '...' : 'N/A';
-    const onHint = onReading ? onReading.substring(0, Math.ceil(onReading.length / 2)) + '...' : 'N/A';
-    const kunHint = kunReading ? kunReading.substring(0, Math.ceil(kunReading.length / 2)) + '...' : 'N/A';
-    
-    return `Significado: ${meaningHint}, On: ${onHint}, Kun: ${kunHint}`;
-};
-
-// Funciones para el teclado japonés
+// Funciones del teclado japonés
 const handleKeyboardInput = (char) => {
-    if (activeInput.value === 'meaning' && meaningAvailable.value) {
-        userInputMeaning.value += char;
-    } else if (activeInput.value === 'on' && onReadingAvailable.value) {
-        userInputOn.value += char;
-    } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
-        userInputKun.value += char;
-    }
+    keyboard.handleKeyboardInput(char, { userInputMeaning, userInputOn, userInputKun }, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
 };
 
-// Mapeo para caracteres especiales
-const dakutenMap = {
-    'か': 'が', 'き': 'ぎ', 'く': 'ぐ', 'け': 'げ', 'こ': 'ご',
-    'さ': 'ざ', 'し': 'じ', 'す': 'ず', 'せ': 'ぜ', 'そ': 'ぞ',
-    'た': 'だ', 'ち': 'ぢ', 'つ': 'づ', 'て': 'で', 'と': 'ど',
-    'は': 'ば', 'ひ': 'び', 'ふ': 'ぶ', 'へ': 'べ', 'ほ': 'ぼ',
-    'カ': 'ガ', 'キ': 'ギ', 'ク': 'グ', 'ケ': 'ゲ', 'コ': 'ゴ',
-    'サ': 'ザ', 'シ': 'ジ', 'ス': 'ズ', 'セ': 'ゼ', 'ソ': 'ゾ',
-    'タ': 'ダ', 'チ': 'ヂ', 'ツ': 'ヅ', 'テ': 'デ', 'ト': 'ド',
-    'ハ': 'バ', 'ヒ': 'ビ', 'フ': 'ブ', 'ヘ': 'ベ', 'ホ': 'ボ',
-};
-
-const handakutenMap = {
-    'は': 'ぱ', 'ひ': 'ぴ', 'ふ': 'ぷ', 'へ': 'ぺ', 'ほ': 'ぽ',
-    'ハ': 'パ', 'ヒ': 'ピ', 'フ': 'プ', 'ヘ': 'ペ', 'ホ': 'ポ',
-};
-
-// Función para manejar caracteres especiales
-const handleSpecialChar = (type) => {
-    let currentInput = '';
-    let currentValue = '';
-    
-    if (activeInput.value === 'meaning' && meaningAvailable.value) {
-        currentValue = userInputMeaning.value;
-    } else if (activeInput.value === 'on' && onReadingAvailable.value) {
-        currentValue = userInputOn.value;
-    } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
-        currentValue = userInputKun.value;
-    }
-    
-    if (currentValue.length === 0) return;
-    
-    const lastChar = currentValue[currentValue.length - 1];
-    let convertedChar = '';
-    
-    if (type === 'dakuten') {
-        convertedChar = dakutenMap[lastChar];
-    } else if (type === 'handakuten') {
-        convertedChar = handakutenMap[lastChar];
-    }
-    
-    // Si se encontró una conversión, reemplaza el último carácter
-    if (convertedChar) {
-        const newValue = currentValue.slice(0, -1) + convertedChar;
-        
-        if (activeInput.value === 'meaning' && meaningAvailable.value) {
-            userInputMeaning.value = newValue;
-        } else if (activeInput.value === 'on' && onReadingAvailable.value) {
-            userInputOn.value = newValue;
-        } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
-            userInputKun.value = newValue;
-        }
-    }
-};
-
-// Alias para manejar la conversión de caracteres especiales desde el teclado japonés
-const handleSpecialCharConversion = (type) => {
-    handleSpecialChar(type);
-};
-
-// Función para limpiar el input activo cuando se presiona el botón "Limpiar" del teclado
 const handleKeyboardClear = () => {
-    if (activeInput.value === 'meaning' && meaningAvailable.value) {
-        userInputMeaning.value = '';
-    } else if (activeInput.value === 'on' && onReadingAvailable.value) {
-        userInputOn.value = '';
-    } else if (activeInput.value === 'kun' && kunReadingAvailable.value) {
-        userInputKun.value = '';
-    }
+    keyboard.handleKeyboardClear({ userInputMeaning, userInputOn, userInputKun }, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
 };
 
-
-const setActiveInput = (inputType) => {
-    // Solo establecer el input como activo si está disponible
-    if (inputType === 'meaning' && meaningAvailable.value) {
-        activeInput.value = inputType;
-    } else if (inputType === 'on' && onReadingAvailable.value) {
-        activeInput.value = inputType;
-    } else if (inputType === 'kun' && kunReadingAvailable.value) {
-        activeInput.value = inputType;
-    }
+const handleSpecialCharConversion = (type) => {
+    keyboard.handleSpecialChar(type, { userInputMeaning, userInputOn, userInputKun }, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
 };
 
-const toggleKeyboard = () => {
-    playButtonClick();
-    showKeyboard.value = !showKeyboard.value;
+const setActiveInputHandler = (inputType) => {
+    keyboard.setActiveInput(inputType, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
 };
 
-const closeKeyboard = () => {
-    showKeyboard.value = false;
+const toggleKeyboardHandler = () => {
+    keyboard.toggleKeyboard(playButtonClick);
 };
 
-// Prevenir scroll cuando el teclado está abierto
-watch(showKeyboard, (newVal) => {
-    if (newVal) {
-        document.body.style.overflow = 'hidden';
-    } else {
-        document.body.style.overflow = '';
-    }
-});
+// Debug logs
+console.log('Kanji:', props.Kanji);
+console.log('Correct Meaning:', props.CorrectMeaning);
+console.log('Correct Reading On:', props.CorrectReadingOn);
+console.log('Correct Reading Kun:', props.CorrectReadingKun);
 
 onMounted(() => {
     // Animar la entrada de la card
@@ -571,14 +191,14 @@ onMounted(() => {
     });
     
     // Inicializar cursor trail effect
-    document.addEventListener('mousemove', createCursorTrail);
-    updateTrails();
+    initCursorTrail();
+    
+    // Establecer el primer input disponible como activo
+    setFirstAvailableInput({ meaningAvailable, onReadingAvailable, kunReadingAvailable });
 });
 
-// Limpiar el overflow cuando el componente se desmonte
 onUnmounted(() => {
-    document.body.style.overflow = '';
-    document.removeEventListener('mousemove', createCursorTrail);
+    cleanupCursorTrail();
 });
 
 </script>
@@ -620,7 +240,7 @@ onUnmounted(() => {
 
       <!-- Botón de teclado japonés -->
       <button
-        @click="toggleKeyboard"
+        @click="toggleKeyboardHandler"
         class="btn-3d btn-3d-green-floating gap-2 pointer-events-auto"
         :class="{ 'bg-MossGreen text-snow': showKeyboard }"
       >
@@ -785,7 +405,7 @@ onUnmounted(() => {
                     </label>
                     <input
                       v-model="userInputMeaning"
-                      @focus="setActiveInput('meaning')"
+                      @focus="setActiveInputHandler('meaning')"
                       @keyup.enter="validateAnswer"
                       type="text"
                       placeholder="Escribe el significado..."
@@ -804,7 +424,7 @@ onUnmounted(() => {
                     </label>
                     <input
                       v-model="userInputOn"
-                      @focus="setActiveInput('on')"
+                      @focus="setActiveInputHandler('on')"
                       @keyup.enter="validateAnswer"
                       type="text"
                       placeholder="Escribe la lectura On..."
@@ -823,7 +443,7 @@ onUnmounted(() => {
                     </label>
                     <input
                       v-model="userInputKun"
-                      @focus="setActiveInput('kun')"
+                      @focus="setActiveInputHandler('kun')"
                       @keyup.enter="validateAnswer"
                       type="text"
                       placeholder="Escribe la lectura Kun..."
