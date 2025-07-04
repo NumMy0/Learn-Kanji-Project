@@ -38,6 +38,20 @@ const {
   handleKeydown
 } = useModals();
 
+// Función para copiar el correo electrónico al portapapeles
+const copyEmail = () => {
+  const email = "santiago.rodriguez9@utp.edu.co";
+  navigator.clipboard.writeText(email)
+    .then(() => {
+      alert(t('emailCopied'));
+      playButtonClick();
+    })
+    .catch(err => {
+      console.error('Error al copiar el correo: ', err);
+      alert(t('emailCopyError'));
+    });
+};
+
 // Usar composable de selección de niveles
 const {
   selectedLevel,
@@ -440,7 +454,21 @@ onUnmounted(() => {
               <p class="mb-2">{{ t('note1') }}</p>
               <p class="mb-2">{{ t('note2') }}</p>
               <p class="mb-2">{{ t('note3') }}</p>
-              <p class="mb-2">{{ t('note4') }}</p>
+              <p class="mb-2">
+                {{ t('note4') }}
+                <button 
+                  @click="copyEmail" 
+                  class="ml-2 px-2 py-1 rounded-md text-xs bg-MossGreen/20 text-MossGreen border border-MossGreen/30 hover:bg-MossGreen/30 transition-colors duration-200"
+                  :title="t('copyEmail')"
+                >
+                  <span class="flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    {{ t('copyEmail') }}
+                  </span>
+                </button>
+              </p>
               <p class="mb-2">{{ t('note5') }} <a href="https://ko-fi.com/santiagorodriguez2234" target="_blank" style="color: var(--theme-text-accent);">Buy Me a Coffee</a>!</p>
             </ul>
           </div>

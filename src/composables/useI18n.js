@@ -87,7 +87,7 @@ const translations = {
     note3:
       "• Los significados están en inglés dado que es el idioma de referencia para el aprendizaje de kanji.",
     note4:
-      "• Para próximas actualizaciones de los significados, puedes dejarme un correo.",
+      "• Para próximas actualizaciones de los significados, puedes escribirme a santiago.rodriguez2234@gmail.com",
     note5:
       "• ¡Gracias por usar la aplicación y si te resultó útil puedes dejarme un café en",
     learningSystem: "📚 Sistema de aprendizaje",
@@ -160,6 +160,10 @@ const translations = {
     studyMode: "Modo Estudio",
     studyModeDescription:
       'Estudia el kanji con toda la información visible. Cambia a modo "Practicar" cuando estés listo.',
+    emailCopied: "¡Correo copiado al portapapeles!",
+    emailCopyError:
+      "No se pudo copiar el correo. Por favor, cópialo manualmente.",
+    copyEmail: "Copiar correo",
   },
 
   en: {
@@ -249,7 +253,7 @@ const translations = {
     note2: "• To report bugs or suggestions, send me an email.",
     note3:
       "• Meanings are in English as it is the reference language for kanji learning.",
-    note4: "• For future updates to meanings, you can email me.",
+    note4: "• For future updates to meanings, you can email me at",
     note5:
       "• Thanks for using the app and if you found it useful you can buy me a coffee at",
     learningSystem: "📚 Learning system",
@@ -322,6 +326,9 @@ const translations = {
     studyMode: "Study Mode",
     studyModeDescription:
       'Study the kanji with all information visible. Switch to "Practice" mode when you\'re ready.',
+    emailCopied: "Email copied to clipboard!",
+    emailCopyError: "Could not copy email. Please copy it manually.",
+    copyEmail: "Copy email",
   },
 };
 
