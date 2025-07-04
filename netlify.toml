@@ -1,0 +1,34 @@
+# Configuración para Netlify
+
+# Comando de construcción y directorio de publicación
+[build]
+  command = "npm run build" # O "pnpm build" si usas pnpm
+  publish = "dist"          # Directorio donde Vite construye la app por defecto
+
+# Configuración para SPA (Single Page Application)
+# Esto asegura que todas las rutas se redirijan a index.html para que Vue Router pueda manejarlas
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Configuración de encabezados para cache y seguridad
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    # Cache control para recursos estáticos
+    cache-control = '''
+    max-age=31536000,
+    public,
+    immutable'''
+
+# Excepción para no cachear el index.html
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    cache-control = '''
+    max-age=0,
+    must-revalidate,
+    public'''

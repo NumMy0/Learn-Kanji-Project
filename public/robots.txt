@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://tu-sitio-de-kanji.netlify.app/sitemap.xml
