@@ -41,13 +41,21 @@
     <!-- Canonical URL -->
     <link rel="canonical" href="https://aprende-kanji.netlify.app/" />
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-JLNQK0KYKC"></script>
+    <!-- Google Analytics 4 (GA4) -->
+    <script async defer src="https://www.googletagmanager.com/gtag/js?id=G-JLNQK0KYKC"></script>
     <script>
+      // Respect user's Do Not Track setting
+      const dnt = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      const doNotTrack = (dnt == "1" || dnt == "yes");
+      
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-JLNQK0KYKC');
+      gtag('config', 'G-JLNQK0KYKC', {
+        'anonymize_ip': true,
+        'send_page_view': !doNotTrack
+      });
     </script>
       
     <link rel="stylesheet" href="/src/style.css" />
