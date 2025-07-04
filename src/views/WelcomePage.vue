@@ -275,7 +275,7 @@ onUnmounted(() => {
         <div class="flex justify-between items-center mb-6">
           <div>
             <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">{{ t('selectSublevel') }}</h3>
-            <p class="text-sm mt-1" style="color: var(--theme-text-secondary);">{{ selectedLevel.toUpperCase() }} {{ t('sublevelDescription') }}</p>
+            <p class="text-sm mt-1" style="color: var(--theme-text-secondary);">{{ selectedLevel.toUpperCase() }}</p>
           </div>
           <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
         </div>

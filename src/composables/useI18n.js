@@ -52,7 +52,6 @@ const translations = {
 
     // Subniveles
     sublevelName: "Subnivel {number}",
-    sublevelDescription: "Kanjis {start}-{end}",
     sublevelDifficulties: {
       basic: "Básico",
       intermediate: "Intermedio",
