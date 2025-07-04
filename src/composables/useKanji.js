@@ -91,7 +91,6 @@ export function useKanji() {
         sublevelData.kanjisPerSublevel
       );
 
-
       // Cargar el primer kanji del subnivel
       if (kanjiRange.kanjis.length > 0) {
         const selectedKanji = kanjiRange.kanjis[0];
@@ -208,11 +207,6 @@ export function useKanji() {
       const nextKanji = kanjiRange.kanjis[nextIndex];
 
       await loadKanjiDetails(nextKanji);
-      console.log(
-        `Kanji ${nextIndex + 1}/${kanjiRange.kanjis.length} del subnivel ${
-          sublevelData.currentSublevel
-        }`
-      );
 
       return kanjiData;
     } catch (error) {
@@ -244,11 +238,6 @@ export function useKanji() {
       const previousKanji = kanjiRange.kanjis[previousIndex];
 
       await loadKanjiDetails(previousKanji);
-      console.log(
-        `Kanji ${previousIndex + 1}/${kanjiRange.kanjis.length} del subnivel ${
-          sublevelData.currentSublevel
-        }`
-      );
 
       return kanjiData;
     } catch (error) {
@@ -276,11 +265,6 @@ export function useKanji() {
       const randomKanji = kanjiRange.kanjis[randomIndex];
 
       await loadKanjiDetails(randomKanji);
-      console.log(
-        `Kanji aleatorio ${randomIndex + 1}/${
-          kanjiRange.kanjis.length
-        } del subnivel ${sublevelData.currentSublevel}`
-      );
 
       return kanjiData;
     } catch (error) {
@@ -311,12 +295,6 @@ export function useKanji() {
         navigationData.kanjiList[navigationData.currentKanjiIndex];
       await loadKanjiDetails(nextKanji);
 
-      console.log(
-        `Kanji ${navigationData.currentKanjiIndex + 1}/${
-          navigationData.kanjiList.length
-        } del nivel ${navigationData.currentLevel}`
-      );
-
       return kanjiData;
     } catch (error) {
       console.error("Error getting next kanji from level:", error);
@@ -344,12 +322,6 @@ export function useKanji() {
         navigationData.kanjiList[navigationData.currentKanjiIndex];
       await loadKanjiDetails(previousKanji);
 
-      console.log(
-        `Kanji ${navigationData.currentKanjiIndex + 1}/${
-          navigationData.kanjiList.length
-        } del nivel ${navigationData.currentLevel}`
-      );
-
       return kanjiData;
     } catch (error) {
       console.error("Error getting previous kanji from level:", error);
@@ -371,12 +343,6 @@ export function useKanji() {
 
       const randomKanji = navigationData.kanjiList[randomIndex];
       await loadKanjiDetails(randomKanji);
-
-      console.log(
-        `Kanji aleatorio ${randomIndex + 1}/${
-          navigationData.kanjiList.length
-        } del nivel ${navigationData.currentLevel}`
-      );
 
       return kanjiData;
     } catch (error) {
@@ -497,7 +463,6 @@ export function useKanji() {
       if (!Array.isArray(levelData) || levelData.length === 0) {
         throw new Error(`No se encontraron kanjis para el nivel ${level}`);
       }
-      console.log("Kanjis del nivel:", levelData);
 
       // Guardar la lista completa para navegación
       navigationData.currentLevel = level;
@@ -530,8 +495,6 @@ export function useKanji() {
         kanjiData.CorrectReadingOn = "Lectura On no disponible";
         kanjiData.AllValidOnReadings = [];
       }
-      console.log("Lectura On:", kanjiData.CorrectReadingOn);
-      console.log("Todas las lecturas On:", kanjiData.AllValidOnReadings);
 
       // Procesamiento de lecturas Kun con manejo de puntos
       if (kanjiDetails.kun_readings?.length > 0) {
@@ -565,17 +528,11 @@ export function useKanji() {
         kanjiData.CorrectReadingKun = "Lectura Kun no disponible";
         kanjiData.AllValidKunReadings = [];
       }
-      console.log("Lectura Kun:", kanjiData.CorrectReadingKun);
-      console.log(
-        "Todas las lecturas Kun válidas:",
-        kanjiData.AllValidKunReadings
-      );
 
       const originalMeaning =
         kanjiDetails.meanings?.length > 0
           ? kanjiDetails.meanings[0]
           : "Meaning not available";
-      console.log("Significado original:", originalMeaning);
 
       // Los significados siempre se muestran en inglés como vienen de la API
       kanjiData.CorrectMeaning = originalMeaning;

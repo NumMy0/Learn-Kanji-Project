@@ -20,10 +20,6 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
 
   // Función para actualizar las lecturas válidas cuando cambia el kanji
   const updateValidReadings = (newValidReadings) => {
-    console.log(
-      "Actualizando lecturas válidas en validación:",
-      newValidReadings
-    );
     validReadings.value = {
       AllValidOnReadings: newValidReadings.AllValidOnReadings || [],
       AllValidKunReadings: newValidReadings.AllValidKunReadings || [],
@@ -130,15 +126,6 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     const correctNormalized = normalizeText(correctAnswer);
     const isCorrect = userNormalized === correctNormalized;
 
-    console.log(
-      `Validando ${fieldName}:`,
-      userNormalized,
-      "===",
-      correctNormalized,
-      "?",
-      isCorrect
-    );
-
     return { isCorrect, fieldName };
   };
 
@@ -155,30 +142,11 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
 
     const userNormalized = normalizeText(userInput);
 
-    // Log del input del usuario normalizado
-    console.log(
-      `Input del usuario normalizado (${fieldName}):`,
-      userNormalized
-    );
-
-    // Convertir todas las lecturas válidas y mostrarlas para debug
+    // Convertir todas las lecturas válidas
     const normalizedValidReadings = validReadings.map((r) => normalizeText(r));
-    console.log(
-      `Lecturas válidas normalizadas (${fieldName}):`,
-      normalizedValidReadings
-    );
 
     // Verificar si el input del usuario coincide con alguna de las lecturas válidas
     const isCorrect = normalizedValidReadings.includes(userNormalized);
-
-    console.log(
-      `Validando ${fieldName}:`,
-      userNormalized,
-      "contra",
-      normalizedValidReadings,
-      "?",
-      isCorrect
-    );
 
     return { isCorrect, fieldName };
   };
@@ -268,8 +236,6 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
           ? validReadings.value.AllValidOnReadings
           : [props.CorrectReadingOn];
 
-      console.log("Validando lectura On con:", validOnReadings);
-
       const result = validateReadingField(
         userInputOn.value,
         validOnReadings,
@@ -291,8 +257,6 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
         validReadings.value.AllValidKunReadings.length > 0
           ? validReadings.value.AllValidKunReadings
           : [props.CorrectReadingKun];
-
-      console.log("Validando lectura Kun con:", validKunReadings);
 
       const result = validateReadingField(
         userInputKun.value,

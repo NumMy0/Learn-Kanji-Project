@@ -23,8 +23,6 @@ export function useSvgFix() {
 
       // Check if viewBox contains percentages
       if (viewBox && viewBox.includes("%")) {
-        console.log(`Found SVG with invalid viewBox: ${viewBox}`);
-
         // Parse the viewBox values
         const values = viewBox.split(" ").map((val) => {
           if (val.endsWith("%")) {
@@ -40,7 +38,6 @@ export function useSvgFix() {
         // Set the fixed viewBox
         const fixedViewBox = values.join(" ");
         svg.setAttribute("viewBox", fixedViewBox);
-        console.log(`Fixed viewBox to: ${fixedViewBox}`);
       }
     });
   };

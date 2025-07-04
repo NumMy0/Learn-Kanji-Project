@@ -50,10 +50,7 @@ const validReadings = computed(() => ({
     AllValidKunReadings: kanjiData.AllValidKunReadings || []
 }));
 
-console.log('Current readings available:', {
-    on: kanjiData.AllValidOnReadings,
-    kun: kanjiData.AllValidKunReadings
-});
+
 
 // Referencia para la validación que se podrá actualizar
 const validationRef = ref(null);
@@ -66,10 +63,7 @@ const { t, tInterpolate, toggleLanguage, languageFlag, languageName } = useI18n(
 
 // Vigilar cambios en kanjiData para actualizar las validaciones
 watch(() => [kanjiData.AllValidOnReadings, kanjiData.AllValidKunReadings], () => {
-    console.log('Readings updated, refreshing validation data:', {
-        on: kanjiData.AllValidOnReadings,
-        kun: kanjiData.AllValidKunReadings
-    });
+
     
     // Actualizar el objeto de lecturas válidas usado por la validación
     if (validationRef.value && validationRef.value.updateValidReadings) {
@@ -300,11 +294,7 @@ const toggleKeyboardHandler = () => {
     keyboard.toggleKeyboard(playButtonClick);
 };
 
-// Debug logs
-console.log('Kanji:', props.Kanji);
-console.log('Correct Meaning:', props.CorrectMeaning);
-console.log('Correct Reading On:', props.CorrectReadingOn);
-console.log('Correct Reading Kun:', props.CorrectReadingKun);
+
 
 onMounted(async () => {
     // Inicializar cursor trail effect
