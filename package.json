@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "pre-deploy": "sh pre-deploy.sh",
+    "pre-deploy": "pre-deploy.bat",
     "deploy": "vite build && netlify deploy"
   },
   "dependencies": {
