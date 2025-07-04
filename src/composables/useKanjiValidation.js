@@ -1,6 +1,12 @@
 import { ref, computed } from "vue";
 
-export function useKanjiValidation(props) {
+export function useKanjiValidation(props, initialValidReadings = {}) {
+  // Mantenemos las lecturas válidas como ref para poder actualizarlas
+  const validReadings = ref({
+    AllValidOnReadings: initialValidReadings.AllValidOnReadings || [],
+    AllValidKunReadings: initialValidReadings.AllValidKunReadings || [],
+  });
+
   const userInputMeaning = ref("");
   const userInputOn = ref("");
   const userInputKun = ref("");
@@ -10,6 +16,18 @@ export function useKanjiValidation(props) {
   const matchedReadingType = ref("");
   const showHint = ref(false);
   const maxAttempts = 3;
+
+  // Función para actualizar las lecturas válidas cuando cambia el kanji
+  const updateValidReadings = (newValidReadings) => {
+    console.log(
+      "Actualizando lecturas válidas en validación:",
+      newValidReadings
+    );
+    validReadings.value = {
+      AllValidOnReadings: newValidReadings.AllValidOnReadings || [],
+      AllValidKunReadings: newValidReadings.AllValidKunReadings || [],
+    };
+  };
 
   // Computed para verificar qué datos están disponibles
   const meaningAvailable = computed(() => {
@@ -90,8 +108,13 @@ export function useKanjiValidation(props) {
   const normalizeText = (text) => {
     if (!text || typeof text !== "string") return "";
 
+    // Convertir a minúsculas y eliminar espacios
     let normalized = text.toLowerCase().trim().replace(/\s+/g, "");
-    normalized = normalized.replace(/[-・。、～〜]/g, "");
+
+    // Eliminar signos de puntuación japonesa
+    normalized = normalized.replace(/[-・。、～〜.]/g, "");
+
+    // Preservar solo caracteres japoneses (hiragana, katakana) y alfanuméricos
     normalized = normalized.replace(
       /[^\u3040-\u309F\u30A0-\u30FFa-zA-Z0-9]/g,
       ""
@@ -111,6 +134,47 @@ export function useKanjiValidation(props) {
       userNormalized,
       "===",
       correctNormalized,
+      "?",
+      isCorrect
+    );
+
+    return { isCorrect, fieldName };
+  };
+
+  // Función especializada para validar lecturas con múltiples opciones válidas
+  const validateReadingField = (userInput, validReadings, fieldName) => {
+    if (
+      !validReadings ||
+      !Array.isArray(validReadings) ||
+      validReadings.length === 0
+    ) {
+      console.warn(`No hay lecturas válidas disponibles para ${fieldName}`);
+      return { isCorrect: false, fieldName };
+    }
+
+    const userNormalized = normalizeText(userInput);
+
+    // Log del input del usuario normalizado
+    console.log(
+      `Input del usuario normalizado (${fieldName}):`,
+      userNormalized
+    );
+
+    // Convertir todas las lecturas válidas y mostrarlas para debug
+    const normalizedValidReadings = validReadings.map((r) => normalizeText(r));
+    console.log(
+      `Lecturas válidas normalizadas (${fieldName}):`,
+      normalizedValidReadings
+    );
+
+    // Verificar si el input del usuario coincide con alguna de las lecturas válidas
+    const isCorrect = normalizedValidReadings.includes(userNormalized);
+
+    console.log(
+      `Validando ${fieldName}:`,
+      userNormalized,
+      "contra",
+      normalizedValidReadings,
       "?",
       isCorrect
     );
@@ -192,9 +256,19 @@ export function useKanjiValidation(props) {
     }
 
     if (onReadingAvailable.value) {
-      const result = validateField(
+      // Usar la lista de lecturas On válidas si está disponible, sino usar la respuesta principal
+      const validOnReadings =
+        validReadings.value &&
+        Array.isArray(validReadings.value.AllValidOnReadings) &&
+        validReadings.value.AllValidOnReadings.length > 0
+          ? validReadings.value.AllValidOnReadings
+          : [props.CorrectReadingOn];
+
+      console.log("Validando lectura On con:", validOnReadings);
+
+      const result = validateReadingField(
         userInputOn.value,
-        props.CorrectReadingOn,
+        validOnReadings,
         "lectura On"
       );
       if (result.isCorrect) {
@@ -206,9 +280,19 @@ export function useKanjiValidation(props) {
     }
 
     if (kunReadingAvailable.value) {
-      const result = validateField(
+      // Usar la lista de lecturas Kun válidas si está disponible, sino usar la respuesta principal
+      const validKunReadings =
+        validReadings.value &&
+        Array.isArray(validReadings.value.AllValidKunReadings) &&
+        validReadings.value.AllValidKunReadings.length > 0
+          ? validReadings.value.AllValidKunReadings
+          : [props.CorrectReadingKun];
+
+      console.log("Validando lectura Kun con:", validKunReadings);
+
+      const result = validateReadingField(
         userInputKun.value,
-        props.CorrectReadingKun,
+        validKunReadings,
         "lectura Kun"
       );
       if (result.isCorrect) {
@@ -286,6 +370,9 @@ export function useKanjiValidation(props) {
     buttonText,
     isButtonDisabled,
     progressPercent,
+
+    // Función para actualizar lecturas válidas cuando cambia el kanji
+    updateValidReadings,
 
     // Funciones
     validateAnswer,

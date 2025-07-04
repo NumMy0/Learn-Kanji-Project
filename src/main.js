@@ -13,4 +13,11 @@ preloadSounds();
 const { loadSavedTheme } = useTheme();
 loadSavedTheme();
 
-createApp(App).use(router).mount("#app");
+// Create the application
+const app = createApp(App);
+
+// Use router
+app.use(router);
+
+// Mount the application
+app.mount("#app");

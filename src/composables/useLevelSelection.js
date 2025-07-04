@@ -1,10 +1,14 @@
 import { ref } from "vue";
+import { useI18n } from "./useI18n.js";
 
 export function useLevelSelection(getSublevelsInfo, router) {
   // Estado para subniveles
   const selectedLevel = ref("");
   const availableSublevels = ref([]);
   const loadingSublevels = ref(false);
+
+  // Usar i18n para traducciones
+  const { tInterpolate } = useI18n();
 
   // Función para manejar selección de nivel
   const handleLevelSelection = async (
@@ -48,19 +52,22 @@ export function useLevelSelection(getSublevelsInfo, router) {
         const kanjiCount = endIndex - startIndex;
 
         // Determinar dificultad basada en el subnivel
-        let difficulty = "Básico";
+        let difficulty = "sublevelDifficulties.basic";
         if (i > Math.ceil(info.totalSublevels / 3)) {
-          difficulty = "Avanzado";
+          difficulty = "sublevelDifficulties.advanced";
         } else if (i > 1) {
-          difficulty = "Intermedio";
+          difficulty = "sublevelDifficulties.intermediate";
         }
 
         availableSublevels.value.push({
           sublevel: i,
-          name: `Subnivel ${i}`,
-          description: `Kanjis ${startIndex + 1}-${endIndex}`,
+          name: tInterpolate("sublevelName", { number: i }),
+          description: tInterpolate("sublevelDescription", {
+            start: startIndex + 1,
+            end: endIndex,
+          }),
           kanjiCount: kanjiCount,
-          difficulty: difficulty,
+          difficulty: tInterpolate(difficulty),
         });
       }
     } catch (error) {

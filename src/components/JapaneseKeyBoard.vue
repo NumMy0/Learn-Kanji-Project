@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useSounds } from '../composables/useSounds.js';
 import KeyButton from './KeyButton.vue';
+import { useI18n } from '../composables/useI18n.js';
 
 // Definir las props y eventos que emite este componente
 const props = defineProps({
@@ -14,6 +15,7 @@ const props = defineProps({
 const emit = defineEmits(['text-input', 'clear', 'close', 'apply-special']);
 
 const { playKeyboardKey, playButtonClick } = useSounds();
+const { t } = useI18n();
 
 const currentMode = ref('hiragana');
 const currentInputText = ref('');
@@ -114,7 +116,9 @@ const applySpecialChar = (type) => {
 <div class="japanese-keyboard flex flex-col gap-3 p-4 bg-Marfil backdrop-blur-sm rounded-2xl shadow-xl border border-platinum max-w-md w-full max-h-[calc(100vh-370px)] overflow-y-auto">
     <!-- Header con botón de cerrar -->
     <div class="flex justify-between items-center mb-2">
-      <h3 class="text-sm font-semibold text-grisTinta">Teclado Japonés</h3>
+      <h3 class="text-sm font-semibold text-grisTinta">
+        {{ t('japaneseKeyboard') }}
+      </h3>
       <button
         @click="() => { playButtonClick(); emit('close'); }"
         class="btn-3d btn-3d-danger text-xs px-2 py-1"
@@ -185,15 +189,15 @@ const applySpecialChar = (type) => {
           char="゛" 
           @click="() => applySpecialChar('dakuten')" 
           :buttonClass="'btn-3d-green-medium text-xs'" 
-          title="Dakuten - Convierte か→が, さ→ざ, etc."
+          :title="t('dakutenTooltip')"
         />
         <KeyButton 
           char="゜" 
           @click="() => applySpecialChar('handakuten')" 
           :buttonClass="'btn-3d-green-medium text-xs'" 
-          title="Handakuten - Convierte は→ぱ, ひ→ぴ, etc."
+          :title="t('handakutenTooltip')"
         />
-        <KeyButton char="Limpiar" @click="handleClear()" :buttonClass="'btn-3d-danger text-xs'" />
+        <KeyButton :char="t('clearButton')" @click="handleClear()" :buttonClass="'btn-3d-danger text-xs'" />
       </div>
     </div>
   </div>

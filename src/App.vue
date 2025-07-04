@@ -1,10 +1,18 @@
 <script setup>
 import { useRoute } from 'vue-router';
-import { watch, nextTick } from 'vue';
+import { watch, nextTick, onMounted } from 'vue';
 import { useMotion } from './composables/useMotion.js';
+import { useSvgFix } from './composables/useSvgFix.js';
 
 const route = useRoute();
 const { animateIn } = useMotion();
+const { setupSvgFixer } = useSvgFix();
+
+// Initialize SVG fixer to fix any invalid viewBox values
+onMounted(() => {
+  // This will fix SVG viewBox issues including "0 0 100% 3" which causes errors
+  setupSvgFixer();
+});
 
 // Animar transiciones de ruta
 watch(() => route.path, async () => {

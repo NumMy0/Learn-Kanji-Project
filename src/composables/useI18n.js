@@ -16,6 +16,12 @@ const translations = {
     usageGuide: "Guía de uso",
     aboutProject: "Acerca del proyecto",
 
+    //Teclado Japonés
+    japaneseKeyboard: "Teclado Japonés",
+    clearButton: "Limpiar",
+    dakutenTooltip: "Dakuten - Convierte か→が, さ→ざ, etc.",
+    handakutenTooltip: "Handakuten - Convierte は→ぱ, ひ→ぴ, etc.",
+
     // Niveles JLPT
     levels: {
       N5: "Básico",
@@ -43,6 +49,15 @@ const translations = {
     loadingSublevels: "Cargando subniveles...",
     kanjis: "kanjis",
     cancel: "Cancelar",
+
+    // Subniveles
+    sublevelName: "Subnivel {number}",
+    sublevelDescription: "Kanjis {start}-{end}",
+    sublevelDifficulties: {
+      basic: "Básico",
+      intermediate: "Intermedio",
+      advanced: "Avanzado",
+    },
 
     // Modal de configuración
     configuration: "Configuración",
@@ -167,6 +182,15 @@ const translations = {
       CONFIG: "Settings",
     },
 
+    //Sublevels
+    sublevels: {
+      N5: "N5 Sublevels",
+      N4: "N4 Sublevels",
+      N3: "N3 Sublevels",
+      N2: "N2 Sublevels",
+      N1: "N1 Sublevels",
+    },
+
     // Time estimations
     estimations: {
       N5: "~80 kanji",
@@ -183,6 +207,21 @@ const translations = {
     loadingSublevels: "Loading sublevels...",
     kanjis: "kanji",
     cancel: "Cancel",
+
+    // Teclado Japonés
+    japaneseKeyboard: "Japanese Keyboard",
+    clearButton: "Clear",
+    dakutenTooltip: "Dakuten - Converts か→が, さ→ざ, etc.",
+    handakutenTooltip: "Handakuten - Converts は→ぱ, ひ→ぴ, etc.",
+
+    // Sublevels
+    sublevelName: "Sublevel {number}",
+    sublevelDescription: "Kanji {start}-{end}",
+    sublevelDifficulties: {
+      basic: "Basic",
+      intermediate: "Intermediate",
+      advanced: "Advanced",
+    },
 
     // Configuration modal
     configuration: "Settings",

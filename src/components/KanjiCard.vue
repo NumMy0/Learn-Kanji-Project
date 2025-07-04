@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useMotion } from '../composables/useMotion.js';
 import { useKanji } from '../composables/useKanji.js';
@@ -19,6 +19,7 @@ const { cursorTrails, initCursorTrail, cleanupCursorTrail } = useCursorTrail();
 const { 
     sublevelData, 
     navigationData,
+    kanjiData,
     goToNextKanji,
     goToPreviousKanji,
     goToRandomKanji
@@ -43,10 +44,41 @@ const props = defineProps({
     }
 });
 
+// Crear un computed reactivo para las lecturas válidas
+const validReadings = computed(() => ({
+    AllValidOnReadings: kanjiData.AllValidOnReadings || [],
+    AllValidKunReadings: kanjiData.AllValidKunReadings || []
+}));
+
+console.log('Current readings available:', {
+    on: kanjiData.AllValidOnReadings,
+    kun: kanjiData.AllValidKunReadings
+});
+
+// Referencia para la validación que se podrá actualizar
+const validationRef = ref(null);
+
 // Usar los composables de validación y teclado
-const validation = useKanjiValidation(props);
+const validation = useKanjiValidation(props, validReadings.value);
+validationRef.value = validation; // Guardar la referencia
 const keyboard = useJapaneseKeyboard();
 const { t, tInterpolate, toggleLanguage, languageFlag, languageName } = useI18n();
+
+// Vigilar cambios en kanjiData para actualizar las validaciones
+watch(() => [kanjiData.AllValidOnReadings, kanjiData.AllValidKunReadings], () => {
+    console.log('Readings updated, refreshing validation data:', {
+        on: kanjiData.AllValidOnReadings,
+        kun: kanjiData.AllValidKunReadings
+    });
+    
+    // Actualizar el objeto de lecturas válidas usado por la validación
+    if (validationRef.value && validationRef.value.updateValidReadings) {
+        validationRef.value.updateValidReadings({
+            AllValidOnReadings: kanjiData.AllValidOnReadings || [],
+            AllValidKunReadings: kanjiData.AllValidKunReadings || []
+        });
+    }
+}, { deep: true });
 
 // Estados adicionales
 const studyMode = ref(false);
@@ -96,8 +128,14 @@ const goToNextKanjiManual = async () => {
     playButtonClick();
     try {
         loadingNavigation.value = true;
+        const wasInStudyMode = studyMode.value;
         await goToNextKanji();
         resetCard();
+        // Restaurar modo estudio si estaba activo
+        if (wasInStudyMode) {
+            studyMode.value = true;
+            showAnswer.value = true;
+        }
     } catch (error) {
         console.warn('Error al navegar:', error.message);
     } finally {
@@ -109,8 +147,14 @@ const goToPreviousKanjiAction = async () => {
     playButtonClick();
     try {
         loadingNavigation.value = true;
+        const wasInStudyMode = studyMode.value;
         await goToPreviousKanji();
         resetCard();
+        // Restaurar modo estudio si estaba activo
+        if (wasInStudyMode) {
+            studyMode.value = true;
+            showAnswer.value = true;
+        }
     } catch (error) {
         console.warn('Error al navegar:', error.message);
     } finally {
@@ -122,8 +166,14 @@ const goToRandomKanjiManual = async () => {
     playButtonClick();
     try {
         loadingNavigation.value = true;
+        const wasInStudyMode = studyMode.value;
         await goToRandomKanji();
         resetCard();
+        // Restaurar modo estudio si estaba activo
+        if (wasInStudyMode) {
+            studyMode.value = true;
+            showAnswer.value = true;
+        }
     } catch (error) {
         console.error('Error al obtener kanji aleatorio:', error);
     } finally {
@@ -182,21 +232,25 @@ console.log('Correct Meaning:', props.CorrectMeaning);
 console.log('Correct Reading On:', props.CorrectReadingOn);
 console.log('Correct Reading Kun:', props.CorrectReadingKun);
 
-onMounted(() => {
-    // Animar la entrada de la card
-    animateIn('.kanji-card', {
-        y: [50, 0],
-        opacity: [0, 1],
-        scale: [0.9, 1],
-        duration: 0.8,
-        easing: 'ease-out'
-    });
-    
+onMounted(async () => {
     // Inicializar cursor trail effect
     initCursorTrail();
     
     // Establecer el primer input disponible como activo
     setFirstAvailableInput({ meaningAvailable, onReadingAvailable, kunReadingAvailable });
+    
+    // Esperar a que el DOM esté completamente renderizado y animar
+    await nextTick();
+    setTimeout(() => {
+        // Animar la entrada de la card
+        animateIn('.kanji-card', {
+            y: [50, 0],
+            opacity: [0, 1],
+            scale: [0.9, 1],
+            duration: 0.8,
+            easing: 'ease-out'
+        });
+    }, 100);
 });
 
 onUnmounted(() => {
@@ -477,48 +531,133 @@ onUnmounted(() => {
               </div>
 
               <!-- Resultado -->
-              <div v-if="showAnswer" class="text-center space-y-4">
-                <div v-if="isCorrect" class="success-animation">
-                  <div class="w-20 h-20 bg-Mindaro/20 border-2 border-MossGreen rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-10 h-10 text-FernGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div v-if="showAnswer" class="text-center space-y-3 py-1">
+                <!-- Resultado correcto - versión más compacta -->
+                <div v-if="isCorrect" class="success-animation flex items-center justify-center gap-2 bg-Mindaro/20 border border-MossGreen rounded-xl p-2">
+                  <div class="w-10 h-10 bg-MossGreen/20 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-FernGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                   </div>
-                  <h3 class="text-2xl font-bold text-FernGreen mb-2">{{ t('correct') }}</h3>
-                  <div class="text-grisTinta space-y-1">
-                    <p>{{ tInterpolate('correctResult', { type: matchedReadingType }) }}</p>
-                    <p>{{ tInterpolate('correctAttempts', { 
-                      count: attempts, 
-                      attempts: attempts === 1 ? t('attempt') : t('attempts') 
-                    }) }}</p>
-                  </div>
+                  <h3 class="text-lg font-bold text-FernGreen">{{ t('correct') }}</h3>
                 </div>
                 
-                <div v-else class="error-shake">
-                  <div class="w-20 h-20 bg-coquelicot/20 border-2 border-cardinal rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-10 h-10 text-cardinal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+                <!-- Resultado incorrecto - versión más compacta -->
+                <div v-else class="error-shake bg-coquelicot/10 border border-cardinal rounded-xl p-2">
+                  <div class="flex items-center justify-center gap-2">
+                    <div class="w-10 h-10 bg-cardinal/20 rounded-full flex items-center justify-center">
+                      <svg class="w-5 h-5 text-cardinal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-cardinal">{{ t('incorrect') }}</h3>
                   </div>
-                  <h3 class="text-2xl font-bold text-cardinal mb-2">{{ t('incorrect') }}</h3>
-                  <div class="text-grisTinta space-y-2">
-                    <p class="text-cardinal font-medium">{{ matchedReadingType }}</p>
-                  </div>
+                  <p class="text-sm text-cardinal font-medium mt-1">{{ matchedReadingType }}</p>
                 </div>
 
-                <button
-                  @click="resetCard"
-                  class="btn-3d btn-3d-green-light"
-                >
-                  {{ t('tryAgain') }}
-                </button>
+                <div class="flex justify-center mt-2">
+                  <button
+                    @click="resetCard"
+                    class="btn-3d btn-3d-green-light text-sm py-2 px-4 max-w-[150px]"
+                  >
+                    {{ t('tryAgain') }}
+                  </button>
+                </div>
                 
-                <!-- Botones de navegación para subniveles -->
-                <div v-if="isInSublevelMode" class="flex gap-2 mt-4">
+                <!-- Navegación compacta para subniveles -->
+                <div v-if="isInSublevelMode" class="mt-3">
+                  <!-- Información del subnivel -->
+                  <p class="text-xs mb-2 text-center" style="color: var(--theme-text-secondary);">
+                    Subnivel {{ sublevelData.currentSublevel }}/{{ sublevelData.totalSublevels }} 
+                    • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
+                  </p>
+                  
+                  <!-- Botones de navegación -->
+                  <div class="flex gap-1">
+                    <button
+                      @click="goToPreviousKanjiAction"
+                      :disabled="loadingNavigation"
+                      class="btn-3d btn-3d-green-light flex-1 text-xs py-1"
+                      :title="t('previous')"
+                    >
+                      ⮜ {{ t('previous') }}
+                    </button>
+                    <button
+                      @click="goToRandomKanjiManual"
+                      :disabled="loadingNavigation"
+                      class="btn-3d btn-3d-green-medium flex-none text-xs py-1 px-2"
+                      :title="t('random')"
+                    >
+                      🎲
+                    </button>
+                    <button
+                      @click="goToNextKanjiManual"
+                      :disabled="loadingNavigation"
+                      class="btn-3d btn-3d-green-light flex-1 text-xs py-1"
+                      :title="t('next')"
+                    >
+                      {{ t('next') }} ⮞
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Navegación compacta para otros niveles -->
+                <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3">
+                  <!-- Información del nivel -->
+                  <p class="text-xs mb-2 text-center" style="color: var(--theme-text-secondary);">
+                    {{ navigationData.currentLevel.toUpperCase() }} 
+                    • Kanji {{ navigationData.currentKanjiIndex + 1 }}/{{ navigationData.kanjiList.length }}
+                  </p>
+                  
+                  <!-- Botones de navegación -->
+                  <div class="flex gap-1">
+                    <button
+                      @click="goToRandomKanjiManual"
+                      :disabled="loadingNavigation"
+                      class="btn-3d btn-3d-green-medium flex-none text-xs py-1 px-2"
+                      :title="t('random')"
+                    >
+                      🎲
+                    </button>
+                    <button
+                      @click="goToNextKanjiManual"
+                      :disabled="loadingNavigation"
+                      class="btn-3d btn-3d-green-light flex-1 text-xs py-1"
+                      :title="t('next')"
+                    >
+                      {{ t('next') }} ⮞
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Modo estudio info -->
+            <div v-if="studyMode" class="text-center space-y-4">
+              <div class="bg-Mindaro/20 border border-MossGreen rounded-xl p-2">
+                <div class="flex items-center justify-center gap-2">
+                  <svg class="w-4 h-4 text-FernGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                  </svg>
+                  <span class="font-medium text-HunterGree text-sm">{{ t('studyMode') }}</span>
+                </div>
+                <p class="text-FernGreen text-xs mt-1">{{ t('studyModeDescription') }}</p>
+              </div>
+
+              <!-- Navegación compacta para modo estudio en subniveles -->
+              <div v-if="isInSublevelMode" class="mt-3">
+                <!-- Información del subnivel -->
+                <p class="text-xs mb-2 text-center" style="color: var(--theme-text-secondary);">
+                  Subnivel {{ sublevelData.currentSublevel }}/{{ sublevelData.totalSublevels }} 
+                  • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
+                </p>
+                
+                <!-- Botones de navegación -->
+                <div class="flex gap-1">
                   <button
                     @click="goToPreviousKanjiAction"
                     :disabled="loadingNavigation"
-                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    class="btn-3d btn-3d-green-light flex-1 text-xs py-1"
                     :title="t('previous')"
                   >
                     ⮜ {{ t('previous') }}
@@ -526,69 +665,49 @@ onUnmounted(() => {
                   <button
                     @click="goToRandomKanjiManual"
                     :disabled="loadingNavigation"
-                    class="btn-3d btn-3d-green-medium flex-1 text-sm"
+                    class="btn-3d btn-3d-green-medium flex-none text-xs py-1 px-2"
                     :title="t('random')"
                   >
-                    🎲 {{ t('random') }}
+                    🎲
                   </button>
                   <button
                     @click="goToNextKanjiManual"
                     :disabled="loadingNavigation"
-                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    class="btn-3d btn-3d-green-light flex-1 text-xs py-1"
                     :title="t('next')"
                   >
                     {{ t('next') }} ⮞
                   </button>
                 </div>
+              </div>
+              
+              <!-- Navegación compacta para modo estudio en otros niveles -->
+              <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3">
+                <!-- Información del nivel -->
+                <p class="text-xs mb-2 text-center" style="color: var(--theme-text-secondary);">
+                  {{ navigationData.currentLevel.toUpperCase() }} 
+                  • Kanji {{ navigationData.currentKanjiIndex + 1 }}/{{ navigationData.kanjiList.length }}
+                </p>
                 
-                <!-- Botones de navegación para otros niveles -->
-                <div v-else-if="navigationData.kanjiList.length > 0" class="flex gap-2 mt-4">
+                <!-- Botones de navegación -->
+                <div class="flex gap-1">
                   <button
                     @click="goToRandomKanjiManual"
                     :disabled="loadingNavigation"
-                    class="btn-3d btn-3d-green-medium flex-1 text-sm"
+                    class="btn-3d btn-3d-green-medium flex-none text-xs py-1 px-2"
                     :title="t('random')"
                   >
-                    🎲 {{ t('random') }}
+                    🎲
                   </button>
                   <button
                     @click="goToNextKanjiManual"
                     :disabled="loadingNavigation"
-                    class="btn-3d btn-3d-green-light flex-1 text-sm"
+                    class="btn-3d btn-3d-green-light flex-1 text-xs py-1"
                     :title="t('next')"
                   >
                     {{ t('next') }} ⮞
                   </button>
                 </div>
-                
-                <!-- Información del subnivel -->
-                <div v-if="isInSublevelMode" class="mt-3 text-center">
-                  <p class="text-xs" style="color: var(--theme-text-secondary);">
-                    Subnivel {{ sublevelData.currentSublevel }} de {{ sublevelData.totalSublevels }} 
-                    • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
-                  </p>
-                </div>
-
-                <!-- Información del nivel general -->
-                <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3 text-center">
-                  <p class="text-xs" style="color: var(--theme-text-secondary);">
-                    {{ navigationData.currentLevel.toUpperCase() }} 
-                    • Kanji {{ navigationData.currentKanjiIndex + 1 }} de {{ navigationData.kanjiList.length }}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Modo estudio info -->
-            <div v-if="studyMode" class="text-center space-y-4">
-              <div class="bg-Mindaro/20 border border-MossGreen rounded-xl p-4">
-                <div class="flex items-center justify-center gap-2 mb-2">
-                  <svg class="w-5 h-5 text-FernGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                  </svg>
-                  <span class="font-medium text-HunterGree">{{ t('studyMode') }}</span>
-                </div>
-                <p class="text-FernGreen text-sm">{{ t('studyModeDescription') }}</p>
               </div>
             </div>
 

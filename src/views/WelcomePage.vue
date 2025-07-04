@@ -441,7 +441,7 @@ onUnmounted(() => {
               <p class="mb-2">{{ t('note2') }}</p>
               <p class="mb-2">{{ t('note3') }}</p>
               <p class="mb-2">{{ t('note4') }}</p>
-              <p class="mb-2">{{ t('note5') }} <a href="https://www.buymeacoffee.com/tu_usuario" target="_blank" style="color: var(--theme-text-accent);">Buy Me a Coffee</a>!</p>
+              <p class="mb-2">{{ t('note5') }} <a href="https://ko-fi.com/santiagorodriguez2234" target="_blank" style="color: var(--theme-text-accent);">Buy Me a Coffee</a>!</p>
             </ul>
           </div>
           

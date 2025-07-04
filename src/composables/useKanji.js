@@ -1,102 +1,16 @@
 import { ref, reactive } from "vue";
 
-// Función para crear el traductor usando Web Translation API
-async function createTranslator() {
-  try {
-    // Verificar si la API está disponible
-    if ("translation" in window && "createTranslator" in window.translation) {
-      const translator = await window.translation.createTranslator({
-        sourceLanguage: "en",
-        targetLanguage: "es",
-      });
-      return translator;
-    }
-    return null;
-  } catch (error) {
-    console.warn("Web Translation API no disponible:", error);
-    return null;
-  }
-}
-
-// Diccionario de fallback para traducciones comunes
-const translationDictionary = {
-  water: "agua",
-  fire: "fuego",
-  earth: "tierra",
-  wind: "viento",
-  tree: "árbol",
-  person: "persona",
-  man: "hombre",
-  woman: "mujer",
-  child: "niño",
-  big: "grande",
-  small: "pequeño",
-  good: "bueno",
-  bad: "malo",
-  one: "uno",
-  two: "dos",
-  three: "tres",
-  four: "cuatro",
-  five: "cinco",
-  six: "seis",
-  seven: "siete",
-  eight: "ocho",
-  nine: "nueve",
-  ten: "diez",
-  hundred: "cien",
-  thousand: "mil",
-  sun: "sol",
-  moon: "luna",
-  day: "día",
-  month: "mes",
-  year: "año",
-  time: "tiempo",
-  morning: "mañana",
-  evening: "tarde",
-  night: "noche",
-  book: "libro",
-  school: "escuela",
-  house: "casa",
-  country: "país",
-  language: "idioma",
-  study: "estudiar",
-  work: "trabajo",
-  eat: "comer",
-  drink: "beber",
-  go: "ir",
-  come: "venir",
-  see: "ver",
-  hear: "escuchar",
-  speak: "hablar",
-  read: "leer",
-  write: "escribir",
-  love: "amor",
-  life: "vida",
-  death: "muerte",
-  hand: "mano",
-  foot: "pie",
-  eye: "ojo",
-  mouth: "boca",
-  head: "cabeza",
-  heart: "corazón",
-};
-
-// Función para traducir usando el diccionario
-function translateWithDictionary(text) {
-  const lowerText = text.toLowerCase().trim();
-  return translationDictionary[lowerText] || text;
-}
-
 // Estado global compartido entre todas las instancias
 const globalState = {
   loading: ref(false),
   error: ref(null),
-  translator: ref(null),
   kanjiData: reactive({
     Kanji: "",
     CorrectMeaning: "",
     CorrectReadingOn: "",
     CorrectReadingKun: "",
+    AllValidOnReadings: [],
+    AllValidKunReadings: [],
   }),
   sublevelData: reactive({
     currentLevel: "",
@@ -116,17 +30,9 @@ const globalState = {
 export function useKanji() {
   const loading = globalState.loading;
   const error = globalState.error;
-  const translator = globalState.translator;
   const kanjiData = globalState.kanjiData;
   const sublevelData = globalState.sublevelData;
   const navigationData = globalState.navigationData;
-
-  // Inicializar el traductor
-  const initTranslator = async () => {
-    if (!translator.value) {
-      translator.value = await createTranslator();
-    }
-  };
 
   // Función para calcular el número de subniveles
   const calculateSublevels = (totalKanjis, kanjisPerSublevel = 100) => {
@@ -148,33 +54,13 @@ export function useKanji() {
     };
   };
 
-  // Función para traducir texto
-  const translateText = async (text) => {
-    if (!text || text.trim() === "") return text;
-
-    try {
-      // Intentar usar la Web Translation API si está disponible
-      if (translator.value) {
-        const result = await translator.value.translate(text);
-        return result;
-      }
-    } catch (error) {
-      console.warn("Error en traducción API, usando diccionario:", error);
-    }
-
-    // Fallback al diccionario
-    const dictResult = translateWithDictionary(text);
-    return dictResult;
-  };
+  // Significados se mantienen siempre en inglés como vienen de la API
 
   // Función para cargar kanjis por nivel y subnivel
   const fetchKanjisBySublevel = async (level, sublevel = 1) => {
     try {
       loading.value = true;
       error.value = null;
-
-      // Inicializar traductor si no existe
-      await initTranslator();
 
       console.log(`Cargando nivel ${level}, subnivel ${sublevel}`);
 
@@ -249,27 +135,64 @@ export function useKanji() {
 
       const kanjiDetails = await kanjiResponse.json();
 
-      // Actualizar lecturas del kanji
-      kanjiData.CorrectReadingOn =
-        kanjiDetails.on_readings?.length > 0
-          ? kanjiDetails.on_readings[0]
-          : "Lectura On no disponible";
+      // Procesamiento de lecturas On
+      if (kanjiDetails.on_readings?.length > 0) {
+        kanjiData.CorrectReadingOn = kanjiDetails.on_readings[0];
+        // Almacenar todas las lecturas on válidas para validación
+        kanjiData.AllValidOnReadings = kanjiDetails.on_readings;
+      } else {
+        kanjiData.CorrectReadingOn = "Lectura On no disponible";
+        kanjiData.AllValidOnReadings = [];
+      }
       console.log("Lectura On:", kanjiData.CorrectReadingOn);
+      console.log("Todas las lecturas On:", kanjiData.AllValidOnReadings);
 
-      kanjiData.CorrectReadingKun =
-        kanjiDetails.kun_readings?.length > 0
-          ? kanjiDetails.kun_readings[0]
-          : "Lectura Kun no disponible";
+      // Procesamiento de lecturas Kun con manejo de puntos
+      if (kanjiDetails.kun_readings?.length > 0) {
+        const firstKunReading = kanjiDetails.kun_readings[0];
+        kanjiData.CorrectReadingKun = firstKunReading;
+
+        // Extraer todas las variantes válidas de lecturas kun
+        kanjiData.AllValidKunReadings = [];
+
+        kanjiDetails.kun_readings.forEach((reading) => {
+          // Agregar la lectura completa
+          kanjiData.AllValidKunReadings.push(reading);
+
+          // Si contiene punto, agregar también las partes separadas
+          if (reading.includes(".")) {
+            const parts = reading.split(".");
+            // Agregar la parte antes del punto (raíz)
+            if (parts[0]) {
+              kanjiData.AllValidKunReadings.push(parts[0]);
+            }
+            // Agregar la combinación completa sin el punto
+            kanjiData.AllValidKunReadings.push(reading.replace(".", ""));
+          }
+        });
+
+        // Eliminar duplicados
+        kanjiData.AllValidKunReadings = [
+          ...new Set(kanjiData.AllValidKunReadings),
+        ];
+      } else {
+        kanjiData.CorrectReadingKun = "Lectura Kun no disponible";
+        kanjiData.AllValidKunReadings = [];
+      }
       console.log("Lectura Kun:", kanjiData.CorrectReadingKun);
+      console.log(
+        "Todas las lecturas Kun válidas:",
+        kanjiData.AllValidKunReadings
+      );
 
       const originalMeaning =
         kanjiDetails.meanings?.length > 0
           ? kanjiDetails.meanings[0]
-          : "Significado no disponible";
-      console.log("Significado original:", originalMeaning);
+          : "Meaning not available";
+      console.log("Significado:", originalMeaning);
 
-      // Traducir el significado
-      kanjiData.CorrectMeaning = await translateText(originalMeaning);
+      // Los significados siempre se muestran en inglés como vienen de la API
+      kanjiData.CorrectMeaning = originalMeaning;
 
       return kanjiData;
     } catch (error) {
@@ -450,6 +373,34 @@ export function useKanji() {
     }
   };
 
+  // Función para obtener un kanji aleatorio del nivel actual
+  const getRandomKanjiFromLevel = async () => {
+    try {
+      if (navigationData.kanjiList.length === 0) {
+        throw new Error("No hay kanjis cargados para este nivel");
+      }
+
+      const randomIndex = Math.floor(
+        Math.random() * navigationData.kanjiList.length
+      );
+      navigationData.currentKanjiIndex = randomIndex;
+
+      const randomKanji = navigationData.kanjiList[randomIndex];
+      await loadKanjiDetails(randomKanji);
+
+      console.log(
+        `Kanji aleatorio ${randomIndex + 1}/${
+          navigationData.kanjiList.length
+        } del nivel ${navigationData.currentLevel}`
+      );
+
+      return kanjiData;
+    } catch (error) {
+      console.error("Error getting random kanji from level:", error);
+      throw error;
+    }
+  };
+
   // Función universal para navegar al siguiente kanji (detecta automáticamente si es subnivel o nivel)
   const goToNextKanji = async () => {
     // Si estamos en modo subnivel (cualquier nivel JLPT con subniveles), usar funciones de subnivel
@@ -547,9 +498,6 @@ export function useKanji() {
       loading.value = true;
       error.value = null;
 
-      // Inicializar traductor si no existe
-      await initTranslator();
-
       const levelResponse = await fetch(
         `https://kanjiapi.dev/v1/kanji/${level}`
       );
@@ -589,27 +537,64 @@ export function useKanji() {
 
       const kanjiDetails = await kanjiResponse.json();
 
-      // Actualizar lecturas del kanji
-      kanjiData.CorrectReadingOn =
-        kanjiDetails.on_readings?.length > 0
-          ? kanjiDetails.on_readings[0]
-          : "Lectura On no disponible";
+      // Procesamiento de lecturas On
+      if (kanjiDetails.on_readings?.length > 0) {
+        kanjiData.CorrectReadingOn = kanjiDetails.on_readings[0];
+        // Almacenar todas las lecturas on válidas para validación
+        kanjiData.AllValidOnReadings = kanjiDetails.on_readings;
+      } else {
+        kanjiData.CorrectReadingOn = "Lectura On no disponible";
+        kanjiData.AllValidOnReadings = [];
+      }
       console.log("Lectura On:", kanjiData.CorrectReadingOn);
+      console.log("Todas las lecturas On:", kanjiData.AllValidOnReadings);
 
-      kanjiData.CorrectReadingKun =
-        kanjiDetails.kun_readings?.length > 0
-          ? kanjiDetails.kun_readings[0]
-          : "Lectura Kun no disponible";
+      // Procesamiento de lecturas Kun con manejo de puntos
+      if (kanjiDetails.kun_readings?.length > 0) {
+        const firstKunReading = kanjiDetails.kun_readings[0];
+        kanjiData.CorrectReadingKun = firstKunReading;
+
+        // Extraer todas las variantes válidas de lecturas kun
+        kanjiData.AllValidKunReadings = [];
+
+        kanjiDetails.kun_readings.forEach((reading) => {
+          // Agregar la lectura completa
+          kanjiData.AllValidKunReadings.push(reading);
+
+          // Si contiene punto, agregar también las partes separadas
+          if (reading.includes(".")) {
+            const parts = reading.split(".");
+            // Agregar la parte antes del punto (raíz)
+            if (parts[0]) {
+              kanjiData.AllValidKunReadings.push(parts[0]);
+            }
+            // Agregar la combinación completa sin el punto
+            kanjiData.AllValidKunReadings.push(reading.replace(".", ""));
+          }
+        });
+
+        // Eliminar duplicados
+        kanjiData.AllValidKunReadings = [
+          ...new Set(kanjiData.AllValidKunReadings),
+        ];
+      } else {
+        kanjiData.CorrectReadingKun = "Lectura Kun no disponible";
+        kanjiData.AllValidKunReadings = [];
+      }
       console.log("Lectura Kun:", kanjiData.CorrectReadingKun);
+      console.log(
+        "Todas las lecturas Kun válidas:",
+        kanjiData.AllValidKunReadings
+      );
 
       const originalMeaning =
         kanjiDetails.meanings?.length > 0
           ? kanjiDetails.meanings[0]
-          : "Significado no disponible";
+          : "Meaning not available";
       console.log("Significado original:", originalMeaning);
 
-      // Traducir el significado
-      kanjiData.CorrectMeaning = await translateText(originalMeaning);
+      // Los significados siempre se muestran en inglés como vienen de la API
+      kanjiData.CorrectMeaning = originalMeaning;
 
       return kanjiData;
     } catch (err) {
@@ -638,6 +623,8 @@ export function useKanji() {
     kanjiData.CorrectMeaning = "";
     kanjiData.CorrectReadingOn = "";
     kanjiData.CorrectReadingKun = "";
+    kanjiData.AllValidOnReadings = [];
+    kanjiData.AllValidKunReadings = [];
     error.value = null;
   };
 
@@ -653,6 +640,7 @@ export function useKanji() {
     getNextKanji,
     getPreviousKanji,
     getPreviousKanjiFromLevel,
+    getRandomKanjiFromLevel,
     getRandomKanjiFromSublevel,
     goToNextKanji,
     goToPreviousKanji,
