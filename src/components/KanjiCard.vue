@@ -84,6 +84,44 @@ watch(() => [kanjiData.AllValidOnReadings, kanjiData.AllValidKunReadings], () =>
 const studyMode = ref(false);
 const loadingNavigation = ref(false);
 
+// Estados para el contador de aciertos, temporizador y finalización del test
+const correctAnswersCount = ref(0);
+const timer = ref(0);
+const isTimerRunning = ref(false);
+const testCompleted = ref(false);
+const timerInterval = ref(null);
+
+// Formatea el tiempo en formato mm:ss
+const formattedTime = computed(() => {
+  const minutes = Math.floor(timer.value / 60);
+  const seconds = timer.value % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+});
+
+// Inicia el temporizador
+const startTimer = () => {
+  if (isTimerRunning.value) return;
+  isTimerRunning.value = true;
+  timerInterval.value = setInterval(() => {
+    timer.value++;
+  }, 1000);
+};
+
+// Detiene el temporizador
+const stopTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+    isTimerRunning.value = false;
+  }
+};
+
+// Reinicia el temporizador y el contador
+const resetStats = () => {
+  correctAnswersCount.value = 0;
+  timer.value = 0;
+  testCompleted.value = false;
+};
+
 // Funciones derivadas de los composables
 const {
     userInputMeaning,
@@ -136,6 +174,12 @@ const goToNextKanjiManual = async () => {
             studyMode.value = true;
             showAnswer.value = true;
         }
+        
+        // Verificar si se ha completado el test (llegado al último kanji del nivel)
+        if (navigationData.currentKanjiIndex === navigationData.kanjiList.length - 1) {
+            stopTimer();
+            testCompleted.value = true;
+        }
     } catch (error) {
         console.warn('Error al navegar:', error.message);
     } finally {
@@ -183,7 +227,24 @@ const goToRandomKanjiManual = async () => {
 
 // Función para validar respuesta usando el composable
 const validateAnswer = () => {
+    // Si es la primera respuesta del test, iniciamos el temporizador
+    if (!isTimerRunning.value && !studyMode.value) {
+        startTimer();
+    }
+    
+    // Validamos la respuesta
     validation.validateAnswer(playButtonClick, playCorrectAnswer, playIncorrectAnswer, animateIn);
+    
+    // Si la respuesta fue correcta, incrementamos el contador
+    if (isCorrect.value && showAnswer.value) {
+        correctAnswersCount.value++;
+    }
+    
+    // Verificar si se ha completado el test (llegado al máximo de aciertos)
+    if (correctAnswersCount.value >= navigationData.kanjiList.length) {
+        stopTimer();
+        testCompleted.value = true;
+    }
 };
 
 // Función para resetear el estado completo
@@ -199,9 +260,22 @@ const toggleStudyMode = () => {
     playButtonClick();
     studyMode.value = !studyMode.value;
     if (studyMode.value) {
+        stopTimer(); // Detener el temporizador en modo estudio
         showAnswer.value = true;
     } else {
         resetCard();
+        resetStats(); // Reiniciar estadísticas al salir del modo estudio
+    }
+};
+
+// Función para reiniciar completamente el test
+const restartTest = () => {
+    playButtonClick();
+    resetStats();
+    resetCard();
+    // Si estamos en un nivel o sublevel, reiniciamos al primer kanji
+    if (navigationData.kanjiList.length > 0) {
+        goToNextKanji(0); // Ir al primer kanji (índice 0)
     }
 };
 
@@ -239,6 +313,9 @@ onMounted(async () => {
     // Establecer el primer input disponible como activo
     setFirstAvailableInput({ meaningAvailable, onReadingAvailable, kunReadingAvailable });
     
+    // Reiniciar estadísticas
+    resetStats();
+    
     // Esperar a que el DOM esté completamente renderizado y animar
     await nextTick();
     setTimeout(() => {
@@ -254,7 +331,11 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    // Limpiar el cursor trail
     cleanupCursorTrail();
+    
+    // Asegurarse de detener el temporizador
+    stopTimer();
 });
 
 </script>
@@ -372,11 +453,29 @@ onUnmounted(() => {
         <div class="kanji-card max-w-lg w-full" :class="showKeyboard ? 'flex-shrink-0' : ''">
           <div class="bg-Marfil backdrop-blur-sm rounded-3xl shadow-2xl p-6 border border-platinum">
             
-            <!-- Progreso -->
-            <div v-if="!studyMode && attempts > 0" class="mb-6">
+            <!-- Progreso, Contador y Temporizador -->
+            <div v-if="!studyMode && (attempts > 0 || isTimerRunning)" class="mb-6">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-azulIndigo">{{ t('progress') }}</span>
-                <span class="text-sm text-Aonobi">{{ attempts }}/{{ maxAttempts }}</span>
+                <div class="flex items-center gap-3">
+                  <!-- Contador de aciertos -->
+                  <div class="flex items-center gap-1">
+                    <svg class="w-4 h-4 text-MossGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span class="text-sm text-MossGreen font-medium">{{ correctAnswersCount }}</span>
+                  </div>
+                  
+                  <!-- Temporizador -->
+                  <div class="flex items-center gap-1">
+                    <svg class="w-4 h-4 text-azulIndigo" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-sm text-azulIndigo">{{ formattedTime }}</span>
+                  </div>
+                  
+                  <span class="text-sm text-Aonobi">{{ attempts }}/{{ maxAttempts }}</span>
+                </div>
               </div>
               <div class="w-full bg-GrisNeutro rounded-full h-2">
                 <div 
@@ -396,50 +495,50 @@ onUnmounted(() => {
             </div>
 
             <!-- Información del kanji -->
-            <div class="space-y-4 mb-6">
+            <div class="space-y-3 mb-4">
               <!-- Significado (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
-              <div v-if="(studyMode || showAnswer) && meaningAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-MossGreen">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 bg-MossGreen rounded-lg flex items-center justify-center">
-                    <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div v-if="(studyMode || showAnswer) && meaningAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-lg p-2 border border-MossGreen">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 bg-MossGreen rounded-md flex items-center justify-center">
+                    <svg class="w-3 h-3 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                     </svg>
                   </div>
                   <div>
-                    <p class="text-sm font-medium text-azulIndigo">{{ t('meaning') }}</p>
-                    <p class="text-lg font-semibold text-grisTinta">{{ CorrectMeaning }}</p>
+                    <p class="text-xs font-medium text-azulIndigo">{{ t('meaning') }}</p>
+                    <p class="text-base font-semibold text-grisTinta">{{ CorrectMeaning }}</p>
                   </div>
                 </div>
               </div>
 
               <!-- Lecturas (mostrar solo en modo estudio o cuando se muestre la respuesta) -->
-              <div v-if="studyMode || showAnswer" class="space-y-3">
+              <div v-if="studyMode || showAnswer" class="space-y-2">
                 <!-- Lectura On -->
-                <div v-if="onReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-FernGreen">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-FernGreen rounded-lg flex items-center justify-center">
-                      <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div v-if="onReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-lg p-2 border border-FernGreen">
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-FernGreen rounded-md flex items-center justify-center">
+                      <svg class="w-3 h-3 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z"></path>
                       </svg>
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-azulIndigo">{{ t('onReading') }}</p>
-                      <p class="text-lg font-semibold text-grisTinta">{{ CorrectReadingOn }}</p>
+                      <p class="text-xs font-medium text-azulIndigo">{{ t('onReading') }}</p>
+                      <p class="text-base font-semibold text-grisTinta">{{ CorrectReadingOn }}</p>
                     </div>
                   </div>
                 </div>
                 
                 <!-- Lectura Kun -->
-                <div v-if="kunReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-xl p-4 border border-HunterGreen">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-HunterGreen rounded-lg flex items-center justify-center">
-                      <svg class="w-4 h-4 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div v-if="kunReadingAvailable" class="bg-gradient-to-r from-platinum to-Marfil rounded-lg p-2 border border-HunterGreen">
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 bg-HunterGreen rounded-md flex items-center justify-center">
+                      <svg class="w-3 h-3 text-snow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                       </svg>
                     </div>
                     <div>
-                      <p class="text-sm font-medium text-azulIndigo">{{ t('kunReading') }}</p>
-                      <p class="text-lg font-semibold text-grisTinta">{{ CorrectReadingKun }}</p>
+                      <p class="text-xs font-medium text-azulIndigo">{{ t('kunReading') }}</p>
+                      <p class="text-base font-semibold text-grisTinta">{{ CorrectReadingKun }}</p>
                     </div>
                   </div>
                 </div>
@@ -450,14 +549,18 @@ onUnmounted(() => {
             <div v-if="!studyMode" class="space-y-4">
               
               <!-- Pista -->
-              <div v-if="showHint" class="bg-coquelicot/10 border border-cardinal rounded-xl p-4">
-                <div class="flex items-center gap-2 mb-2">
-                  <svg class="w-5 h-5 text-cardinal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                  </svg>
-                  <span class="font-medium text-firebrick">{{ t('hint') }}</span>
+              <div v-if="showHint" class="bg-coquelicot/10 border border-cardinal rounded-lg p-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 bg-cardinal/20 rounded-md flex items-center justify-center">
+                    <svg class="w-3 h-3 text-cardinal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium text-firebrick">{{ t('hint') }}</p>
+                    <p class="text-sm text-cardinal">{{ tInterpolate('hintText', { hint: getHint() }) }}</p>
+                  </div>
                 </div>
-                <p class="text-cardinal">{{ tInterpolate('hintText', { hint: getHint() }) }}</p>
               </div>
 
               <!-- Inputs para las respuestas (solo mostrar campos disponibles) -->
@@ -530,8 +633,48 @@ onUnmounted(() => {
                 </button>
               </div>
 
+              <!-- Test Completed - Mensaje de finalización -->
+              <div v-if="testCompleted" class="text-center space-y-4 py-2 animate__animated animate__fadeIn">
+                <div class="bg-Mindaro/30 border-2 border-MossGreen rounded-xl p-4">
+                  <div class="flex items-center justify-center mb-3">
+                    <div class="w-16 h-16 bg-MossGreen/20 rounded-full flex items-center justify-center">
+                      <svg class="w-8 h-8 text-FernGreen" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  <h2 class="text-xl font-bold text-FernGreen mb-2">{{ t('testCompleted') }}</h2>
+                  
+                  <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="bg-white/50 rounded-lg p-3">
+                      <p class="text-xs text-azulIndigo">{{ t('correctAnswers') }}</p>
+                      <p class="text-2xl font-bold text-MossGreen">{{ correctAnswersCount }}</p>
+                    </div>
+                    <div class="bg-white/50 rounded-lg p-3">
+                      <p class="text-xs text-azulIndigo">{{ t('time') }}</p>
+                      <p class="text-2xl font-bold text-MossGreen">{{ formattedTime }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="flex flex-col gap-2">
+                    <button
+                      @click="restartTest"
+                      class="btn-3d btn-3d-green-medium py-2"
+                    >
+                      {{ t('tryAgainTest') }}
+                    </button>
+                    <router-link
+                      to="/"
+                      class="btn-3d btn-3d-green-primary py-2"
+                    >
+                      {{ t('backToMainPage') }}
+                    </router-link>
+                  </div>
+                </div>
+              </div>
+
               <!-- Resultado -->
-              <div v-if="showAnswer" class="text-center space-y-3 py-1">
+              <div v-else-if="showAnswer" class="text-center space-y-3 py-1">
                 <!-- Resultado correcto - versión más compacta -->
                 <div v-if="isCorrect" class="success-animation flex items-center justify-center gap-2 bg-Mindaro/20 border border-MossGreen rounded-xl p-2">
                   <div class="w-10 h-10 bg-MossGreen/20 rounded-full flex items-center justify-center">
@@ -566,12 +709,6 @@ onUnmounted(() => {
                 
                 <!-- Navegación compacta para subniveles -->
                 <div v-if="isInSublevelMode" class="mt-3">
-                  <!-- Información del subnivel -->
-                  <p class="text-xs mb-2 text-center" style="color: var(--theme-text-secondary);">
-                    Subnivel {{ sublevelData.currentSublevel }}/{{ sublevelData.totalSublevels }} 
-                    • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
-                  </p>
-                  
                   <!-- Botones de navegación -->
                   <div class="flex gap-1">
                     <button
@@ -602,13 +739,7 @@ onUnmounted(() => {
                 </div>
                 
                 <!-- Navegación compacta para otros niveles -->
-                <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3">
-                  <!-- Información del nivel -->
-                  <p class="text-xs mb-2 text-center" style="color: var(--theme-text-secondary);">
-                    {{ navigationData.currentLevel.toUpperCase() }} 
-                    • Kanji {{ navigationData.currentKanjiIndex + 1 }}/{{ navigationData.kanjiList.length }}
-                  </p>
-                  
+                <div v-else-if="navigationData.kanjiList.length > 0" class="mt-3">               
                   <!-- Botones de navegación -->
                   <div class="flex gap-1">
                     <button
@@ -646,11 +777,6 @@ onUnmounted(() => {
 
               <!-- Navegación compacta para modo estudio en subniveles -->
               <div v-if="isInSublevelMode" class="mt-3">
-                <!-- Información del subnivel -->
-                <p class="text-xs mb-2 text-center" style="color: var(--theme-text-secondary);">
-                  Subnivel {{ sublevelData.currentSublevel }}/{{ sublevelData.totalSublevels }} 
-                  • Kanji {{ sublevelData.currentKanjiIndex + 1 }}
-                </p>
                 
                 <!-- Botones de navegación -->
                 <div class="flex gap-1">

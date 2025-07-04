@@ -62,8 +62,6 @@ export function useKanji() {
       loading.value = true;
       error.value = null;
 
-      console.log(`Cargando nivel ${level}, subnivel ${sublevel}`);
-
       // Obtener información completa del nivel
       const levelInfo = await getSublevelsInfo(level);
 
@@ -93,12 +91,6 @@ export function useKanji() {
         sublevelData.kanjisPerSublevel
       );
 
-      console.log(
-        `Subnivel ${sublevel}/${levelInfo.totalSublevels}: kanjis ${
-          kanjiRange.startIndex + 1
-        }-${kanjiRange.endIndex} de ${levelInfo.totalKanjis} total`
-      );
-      console.log(`Kanjis en este subnivel:`, kanjiRange.kanjis);
 
       // Cargar el primer kanji del subnivel
       if (kanjiRange.kanjis.length > 0) {
@@ -144,8 +136,6 @@ export function useKanji() {
         kanjiData.CorrectReadingOn = "Lectura On no disponible";
         kanjiData.AllValidOnReadings = [];
       }
-      console.log("Lectura On:", kanjiData.CorrectReadingOn);
-      console.log("Todas las lecturas On:", kanjiData.AllValidOnReadings);
 
       // Procesamiento de lecturas Kun con manejo de puntos
       if (kanjiDetails.kun_readings?.length > 0) {
@@ -179,17 +169,11 @@ export function useKanji() {
         kanjiData.CorrectReadingKun = "Lectura Kun no disponible";
         kanjiData.AllValidKunReadings = [];
       }
-      console.log("Lectura Kun:", kanjiData.CorrectReadingKun);
-      console.log(
-        "Todas las lecturas Kun válidas:",
-        kanjiData.AllValidKunReadings
-      );
 
       const originalMeaning =
         kanjiDetails.meanings?.length > 0
           ? kanjiDetails.meanings[0]
           : "Meaning not available";
-      console.log("Significado:", originalMeaning);
 
       // Los significados siempre se muestran en inglés como vienen de la API
       kanjiData.CorrectMeaning = originalMeaning;

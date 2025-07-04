@@ -122,7 +122,7 @@ const translations = {
     feature7: "• Accesible desde cualquier dispositivo",
     technologies: "Tecnologías",
     version: "Versión",
-    versionText: "v1.0.0 - Diciembre 2024",
+    versionText: "v1.0.0 - Julio 2025",
     madeWith: "Hecho con ❤️ para la comunidad de estudiantes de japonés",
     close: "Cerrar",
 
@@ -142,6 +142,10 @@ const translations = {
     kunReading: "Lectura Kun (訓読み)",
     hint: "Pista",
     hintText: "Las lecturas comienzan con: {hint}",
+    meaningPrefix: "Significado",
+    onPrefix: "On",
+    kunPrefix: "Kun",
+    allAnswersIncorrect: "todas las respuestas disponibles incorrectas",
     meaningPlaceholder: "Escribe el significado...",
     onReadingPlaceholder: "Escribe la lectura On...",
     kunReadingPlaceholder: "Escribe la lectura Kun...",
@@ -164,6 +168,13 @@ const translations = {
     emailCopyError:
       "No se pudo copiar el correo. Por favor, cópialo manualmente.",
     copyEmail: "Copiar correo",
+
+    // Test completion
+    testCompleted: "¡Test completado!",
+    correctAnswers: "Aciertos",
+    time: "Tiempo",
+    tryAgainTest: "Volver a intentar",
+    backToMainPage: "Volver a la página principal",
   },
 
   en: {
@@ -288,7 +299,7 @@ const translations = {
     feature7: "• Accessible from any device",
     technologies: "Technologies",
     version: "Version",
-    versionText: "v1.0.0 - December 2024",
+    versionText: "v1.0.0 - July 2025",
     madeWith: "Made with ❤️ for the Japanese learning community",
     close: "Close",
 
@@ -308,6 +319,10 @@ const translations = {
     kunReading: "Kun Reading (訓読み)",
     hint: "Hint",
     hintText: "Readings start with: {hint}",
+    meaningPrefix: "Meaning",
+    onPrefix: "On",
+    kunPrefix: "Kun",
+    allAnswersIncorrect: "all available answers incorrect",
     meaningPlaceholder: "Enter the meaning...",
     onReadingPlaceholder: "Enter the On reading...",
     kunReadingPlaceholder: "Enter the Kun reading...",
@@ -329,6 +344,13 @@ const translations = {
     emailCopied: "Email copied to clipboard!",
     emailCopyError: "Could not copy email. Please copy it manually.",
     copyEmail: "Copy email",
+
+    // Test completion
+    testCompleted: "Test completed!",
+    correctAnswers: "Correct answers",
+    time: "Time",
+    tryAgainTest: "Try again",
+    backToMainPage: "Back to main page",
   },
 };
 

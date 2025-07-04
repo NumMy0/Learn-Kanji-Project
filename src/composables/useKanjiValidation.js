@@ -1,4 +1,5 @@
 import { ref, computed } from "vue";
+import { useI18n } from "./useI18n";
 
 export function useKanjiValidation(props, initialValidReadings = {}) {
   // Mantenemos las lecturas válidas como ref para poder actualizarlas
@@ -184,6 +185,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
 
   // Función para obtener una pista
   const getHint = () => {
+    const { t } = useI18n();
     const meaning = props.CorrectMeaning || "";
     const onReading = props.CorrectReadingOn || "";
     const kunReading = props.CorrectReadingKun || "";
@@ -198,7 +200,9 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
       ? kunReading.substring(0, Math.ceil(kunReading.length / 2)) + "..."
       : "N/A";
 
-    return `Significado: ${meaningHint}, On: ${onHint}, Kun: ${kunHint}`;
+    return `${t("meaningPrefix")}: ${meaningHint}, ${t(
+      "onPrefix"
+    )}: ${onHint}, ${t("kunPrefix")}: ${kunHint}`;
   };
 
   // Función para resetear el estado de validación
@@ -329,7 +333,8 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
           incorrectAnswers.length > 1 ? "s" : ""
         }`;
       } else {
-        matchedReadingType.value = `todas las respuestas disponibles incorrectas`;
+        const { t } = useI18n();
+        matchedReadingType.value = t("allAnswersIncorrect");
       }
       isCorrect.value = false;
       playIncorrectAnswer();

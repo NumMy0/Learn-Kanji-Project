@@ -167,7 +167,7 @@ onUnmounted(() => {
       </button>
     </div>
     <!-- Elementos decorativos de fondo -->
-    <div class="absolute inset-0 opacity-10">
+    <div class="absolute inset-0 opacity-10 select-none">
       <div class="absolute top-10 left-10 text-8xl font-bold rotate-12" style="color: var(--theme-text-secondary);">漢</div>
       <div class="absolute top-32 right-20 text-6xl font-bold -rotate-6" style="color: var(--theme-text-accent);">字</div>
       <div class="absolute bottom-20 left-20 text-7xl font-bold rotate-6" style="color: var(--theme-border);">学</div>
