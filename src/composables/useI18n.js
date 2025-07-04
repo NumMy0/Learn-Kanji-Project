@@ -87,7 +87,7 @@ const translations = {
     note3:
       "• Los significados están en inglés dado que es el idioma de referencia para el aprendizaje de kanji.",
     note4:
-      "• Para próximas actualizaciones de los significados, puedes escribirme a santiago.rodriguez2234@gmail.com",
+      "• Para próximas actualizaciones de los significados, puedes escribirme a mi correo",
     note5:
       "• ¡Gracias por usar la aplicación y si te resultó útil puedes dejarme un café en",
     learningSystem: "📚 Sistema de aprendizaje",

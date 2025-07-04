@@ -359,25 +359,6 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Configuración de dificultad -->
-          <div>
-            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('difficulty') }}</h4>
-            <div class="space-y-2">
-              <label class="flex items-center">
-                <input type="radio" name="difficulty" value="easy" class="mr-3" style="accent-color: var(--theme-border);">
-                <span style="color: var(--theme-text-primary);">{{ t('showHints') }}</span>
-              </label>
-              <label class="flex items-center">
-                <input type="radio" name="difficulty" value="normal" class="mr-3" style="accent-color: var(--theme-border);" checked>
-                <span style="color: var(--theme-text-primary);">{{ t('standardDifficulty') }}</span>
-              </label>
-              <label class="flex items-center">
-                <input type="radio" name="difficulty" value="hard" class="mr-3" style="accent-color: var(--theme-border);">
-                <span style="color: var(--theme-text-primary);">{{ t('expertMode') }}</span>
-              </label>
-            </div>
-          </div>
-
           <!-- Configuración de tema -->
           <div>
             <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('theme') }}</h4>
@@ -469,7 +450,7 @@ onUnmounted(() => {
                   </span>
                 </button>
               </p>
-              <p class="mb-2">{{ t('note5') }} <a href="https://ko-fi.com/santiagorodriguez2234" target="_blank" style="color: var(--theme-text-accent);">Buy Me a Coffee</a>!</p>
+              <p class="mb-2">{{ t('note5') }} <a href="https://ko-fi.com/santiagorodriguez2234" target="_blank" style="color: var(--theme-text-accent);">Ko-fi</a>!</p>
             </ul>
           </div>
           
