@@ -9,12 +9,13 @@ import { useCursorTrail } from '../composables/useCursorTrail.js';
 import { useKanjiValidation } from '../composables/useKanjiValidation.js';
 import { useJapaneseKeyboard } from '../composables/useJapaneseKeyboard.js';
 import { useI18n } from '../composables/useI18n.js';
+import { useModals } from '../composables/useModals.js';
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
 const { animateIn } = useMotion();
 const route = useRoute();
 const { playButtonClick, playCorrectAnswer, playIncorrectAnswer, soundEnabled, toggleSound } = useSounds();
-const { currentTheme, isDarkMode, themeIcon, toggleTheme } = useTheme();
+const { currentTheme, isDarkMode, themeIcon, toggleTheme, setTheme } = useTheme();
 const { cursorTrails, initCursorTrail, cleanupCursorTrail } = useCursorTrail();
 const { 
     sublevelData, 
@@ -24,6 +25,27 @@ const {
     goToPreviousKanji,
     goToRandomKanji
 } = useKanji();
+
+// Usar composable de modales
+const {
+  showConfigModal,
+  openConfigModal,
+  closeModal,
+  handleKeydown
+} = useModals();
+
+// Función wrapper para pasar dependencias al composable de modales
+const openConfigModalWrapper = () => {
+  openConfigModal(playButtonClick);
+};
+
+// Estado para detectar pantalla pequeña
+const isSmallScreen = ref(false);
+
+// Función para verificar el tamaño de la pantalla
+const checkScreenSize = () => {
+  isSmallScreen.value = window.innerWidth < 768; // md breakpoint en Tailwind
+};
 
 const props = defineProps({
     Kanji: {
@@ -306,6 +328,9 @@ onMounted(async () => {
     // Reiniciar estadísticas
     resetStats();
     
+    // Verificar tamaño de pantalla inicialmente
+    checkScreenSize();
+    
     // Esperar a que el DOM esté completamente renderizado y animar
     await nextTick();
     setTimeout(() => {
@@ -389,8 +414,8 @@ onUnmounted(() => {
       </button>
     </div>
 
-    <!-- Controles superiores (sonido y tema) -->
-    <div class="fixed top-6 right-6 z-20 flex gap-3">
+    <!-- Controles superiores (sonido y tema) - ocultos en pantallas pequeñas -->
+    <div class="fixed top-6 right-6 z-20 flex gap-3 top-controls">
       <!-- Botón de cambio de idioma -->
       <button
         @click="() => { toggleLanguage(); playButtonClick(); }"
@@ -433,6 +458,18 @@ onUnmounted(() => {
         </svg>
       </button>
     </div>
+    
+    <!-- Botón flotante de configuración (visible solo en pantallas pequeñas) -->
+    <button 
+      v-if="isSmallScreen"
+      @click="openConfigModalWrapper"
+      class="config-button-floating"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+      </svg>
+    </button>
 
     <!-- Contenedor principal -->
     <div class="flex items-center justify-center h-full pt-20 transition-all duration-300">
@@ -842,6 +879,121 @@ onUnmounted(() => {
 
       </div>
     </div>
+
+
+
+    <!-- Modal de configuración (usando composable de modales) -->
+    <teleport to="body">
+      <div v-if="showConfigModal" class="fixed inset-0 flex items-center justify-center z-40" style="background: var(--theme-overlay);">
+        <div class="rounded-3xl border-2 p-8 max-w-md w-full max-h-[80vh] overflow-y-auto custom-scrollbar" 
+           style="background-color: var(--theme-surface); border-color: var(--theme-border); box-shadow: 0 20px 25px -5px var(--theme-shadow), 0 10px 10px -5px var(--theme-shadow);">
+          <!-- Header del modal -->
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold" style="color: var(--theme-text-primary);">{{ t('configuration') }}</h3>
+            <button @click="closeModal" class="text-2xl transition-opacity duration-200 hover:opacity-60" style="color: var(--theme-text-accent);">&times;</button>
+          </div>
+          
+          <!-- Contenido del modal -->
+          <div class="space-y-6">
+            <!-- Configuración de sonido -->
+            <div>
+              <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('audio') }}</h4>
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input 
+                    type="checkbox" 
+                    class="mr-3" 
+                    style="accent-color: var(--theme-border);" 
+                    :checked="soundEnabled"
+                    @change="toggleSound"
+                  >
+                  <span style="color: var(--theme-text-primary);">{{ t('soundEffects') }}</span>
+                </label>
+                <div class="text-xs mt-1" style="color: var(--theme-text-secondary);">
+                  {{ t('soundDescription') }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Configuración de tema -->
+            <div>
+              <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('theme') }}</h4>
+              <div class="space-y-2">
+                <label class="flex items-center cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="theme" 
+                    value="light" 
+                    class="mr-3" 
+                    style="accent-color: var(--theme-border);" 
+                    :checked="currentTheme === 'light'"
+                    @change="setTheme('light')"
+                  >
+                  <span style="color: var(--theme-text-primary);">{{ t('lightTheme') }}</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="theme" 
+                    value="dark" 
+                    class="mr-3" 
+                    style="accent-color: var(--theme-border);"
+                    :checked="currentTheme === 'dark'"
+                    @change="setTheme('dark')"
+                  >
+                  <span style="color: var(--theme-text-primary);">{{ t('darkTheme') }}</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                  <input 
+                    type="radio" 
+                    name="theme" 
+                    value="system" 
+                    class="mr-3" 
+                    style="accent-color: var(--theme-border);"
+                    :checked="currentTheme === 'system'"
+                    @change="setTheme('system')"
+                  >
+                  <span style="color: var(--theme-text-primary);">{{ t('systemTheme') }}</span>
+                </label>
+                <div class="text-xs mt-2" style="color: var(--theme-text-secondary);">
+                  {{ t('currentTheme') }}: {{ isDarkMode ? t('dark') : t('light') }}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Configuración de idioma -->
+            <div>
+              <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('language') }}</h4>
+              <div class="space-y-2">
+                <button 
+                  @click="() => { toggleLanguage(); playButtonClick(); }"
+                  class="flex items-center space-x-2 py-2 px-4 rounded-lg transition-colors duration-200"
+                  style="background-color: var(--theme-border-light); color: var(--theme-text-primary);"
+                >
+                  <span class="text-xl">{{ languageFlag }}</span>
+                  <span class="text-sm">{{ languageName }}</span>
+                  <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h10"></path>
+                  </svg>
+                </button>
+                <div class="text-xs mt-1" style="color: var(--theme-text-secondary);">
+                  {{ t('languageDescription') }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-8 flex gap-3">
+            <button @click="() => { playButtonClick(); closeModal(); }" class="btn-3d btn-3d-green-medium flex-1">
+              {{ t('saveChanges') }}
+            </button>
+            <button @click="() => { playButtonClick(); closeModal(); }" class="btn-3d btn-3d-green-light">
+              {{ t('cancel') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </teleport>
   </div>
 </template>
 
@@ -863,6 +1015,35 @@ onUnmounted(() => {
   }
   100% {
     opacity: 0;
+  }
+}
+
+/* Estilos para el botón de configuración flotante */
+.config-button-floating {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--theme-border);
+  color: var(--theme-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 30;
+  transition: transform 0.2s ease-in-out;
+}
+
+.config-button-floating:hover {
+  transform: scale(1.1);
+}
+
+/* Hide controls on small screens */
+@media (max-width: 767px) {
+  .top-controls {
+    display: none;
   }
 }
 </style>

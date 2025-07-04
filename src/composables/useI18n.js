@@ -75,6 +75,9 @@ const translations = {
     currentTheme: "Actual",
     dark: "Oscuro",
     light: "Claro",
+    language: "Idioma",
+    languageDescription: "Cambia el idioma de la interfaz de la aplicación",
+    additionalOptions: "Opciones adicionales",
     saveChanges: "Guardar cambios",
 
     // Modal de guía
@@ -253,6 +256,9 @@ const translations = {
     currentTheme: "Current",
     dark: "Dark",
     light: "Light",
+    language: "Language",
+    languageDescription: "Change the application's interface language",
+    additionalOptions: "Additional options",
     saveChanges: "Save changes",
 
     // Guide modal

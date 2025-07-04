@@ -122,8 +122,8 @@ onUnmounted(() => {
         }"
       ></div>
     </div>
-    <!-- Controles superiores (sonido y tema) -->
-    <div class="fixed top-6 right-6 z-20 flex gap-3">
+    <!-- Controles superiores (sonido y tema) - visibles solo en pantallas medianas y grandes -->
+    <div class="fixed top-6 right-6 z-20 hidden md:flex gap-3">
       <!-- Botón de cambio de idioma -->
       <button
         @click="() => { toggleLanguage(); playButtonClick(); }"
@@ -173,6 +173,7 @@ onUnmounted(() => {
       <div class="absolute bottom-20 left-20 text-7xl font-bold rotate-6" style="color: var(--theme-border);">学</div>
       <div class="absolute bottom-32 right-10 text-5xl font-bold -rotate-12" style="color: var(--theme-text-primary);">習</div>
     </div>
+    
 
     <!-- Contenido principal -->
     <div class="relative z-10 max-w-6xl mx-auto text-center">
@@ -256,8 +257,8 @@ onUnmounted(() => {
         </template>
       </div>
       
-      <!-- Botones de acción adicionales -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center p-3">
+      <!-- Botones de acción adicionales - ocultos en móviles -->
+      <div class="hidden sm:flex flex-row gap-4 justify-center p-3">
         <button @click="openGuideModalWrapper" class="btn-3d btn-3d-green-light">
           {{ t('usageGuide') }}
         </button>
@@ -401,6 +402,27 @@ onUnmounted(() => {
               </label>
               <div class="text-xs mt-2" style="color: var(--theme-text-secondary);">
                 {{ t('currentTheme') }}: {{ isDarkMode ? t('dark') : t('light') }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Configuración de idioma -->
+          <div>
+            <h4 class="text-lg font-semibold mb-3" style="color: var(--theme-text-secondary);">{{ t('language') }}</h4>
+            <div class="space-y-2">
+              <button 
+                @click="() => { toggleLanguage(); playButtonClick(); }"
+                class="flex items-center space-x-2 py-2 px-4 rounded-lg transition-colors duration-200"
+                style="background-color: var(--theme-border-light); color: var(--theme-text-primary);"
+              >
+                <span class="text-xl">{{ languageFlag }}</span>
+                <span class="text-sm">{{ languageName }}</span>
+                <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h10"></path>
+                </svg>
+              </button>
+              <div class="text-xs mt-1" style="color: var(--theme-text-secondary);">
+                {{ t('languageDescription') }}
               </div>
             </div>
           </div>
