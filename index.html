@@ -2,7 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <!-- Favicons -->
+    <!-- Preconectar para recursos críticos -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://kanjiapi.dev">
+    
+    <!-- Favicons con rutas relativas para desarrollo y absolutas para producción -->
     <link rel="icon" type="image/svg+xml" href="/kanji-icon.svg" />
     <link rel="icon" type="image/svg+xml" sizes="32x32" href="/favicon-32.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.svg" />
@@ -42,5 +46,6 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
+    <script src="/favicon-refresh.js"></script>
   </body>
 </html>
