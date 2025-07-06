@@ -1,10 +1,93 @@
-<script setup>
-import { ref } from 'vue';
-import { useSounds } from '../composables/useSounds.js';
-import KeyButton from './KeyButton.vue';
-import { useI18n } from '../composables/useI18n.js';
+<!--
+  JapaneseKeyBoard.vue
+  
+  Componente de teclado japonés virtual que permite la entrada de caracteres hiragana y katakana.
+  Incluye funcionalidades avanzadas como aplicación de dakuten y handakuten.
+  
+  @component
+  @example
+  <JapaneseKeyBoard 
+    @text-input="handleTextInput"
+    @clear="handleClear"
+    @close="handleClose"
+    @apply-special="handleSpecialChar"
+  />
+-->
+<template>
+  <div class="japanese-keyboard">
+    <!-- Header con título y botón de cerrar -->
+    <KeyboardHeader @close="handleClose" />
+    
+    <!-- Botones de selección de modo (Hiragana/Katakana) -->
+    <ModeSelector 
+      :current-mode="currentMode" 
+      @mode-change="handleModeChange" 
+    />
+    
+    <!-- Grid principal del teclado -->
+    <div class="keyboard-grid">
+      <!-- Fila de vocales -->
+      <div class="keyboard-row">
+        <KeyButton
+          v-for="char in currentVocals"
+          :key="char"
+          :char="char"
+          @click="handleKeyPress"
+        />
+      </div>
 
-// Definir las props y eventos que emite este componente
+      <!-- Filas principales de consonantes -->
+      <div 
+        v-for="(row, index) in currentConsonantRows" 
+        :key="`row-${index}`"
+        class="keyboard-row"
+      >
+        <KeyButton
+          v-for="char in row"
+          :key="char"
+          :char="char"
+          @click="handleKeyPress"
+        />
+      </div>
+
+      <!-- Fila de caracteres pequeños Y -->
+      <div class="keyboard-row">
+        <KeyButton
+          v-for="char in currentSmallY"
+          :key="char"
+          :char="char"
+          @click="handleKeyPress"
+        />
+      </div>
+
+      <!-- Caracteres especiales (tsu pequeño y n) -->
+      <SpecialCharacterRow @character-input="handleKeyPress" />
+
+      <!-- Botones de modificadores y funciones -->
+      <ActionButtonsRow 
+        @apply-dakuten="() => handleSpecialCharacter('dakuten')"
+        @apply-handakuten="() => handleSpecialCharacter('handakuten')"
+        @clear="handleClearInput"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue';
+import { useSounds } from '../composables/useSounds.js';
+import { useI18n } from '../composables/useI18n.js';
+import KeyButton from './KeyButton.vue';
+import KeyboardHeader from './keyboard/KeyboardHeader.vue';
+import ModeSelector from './keyboard/ModeSelector.vue';
+import SpecialCharacterRow from './keyboard/SpecialCharacterRow.vue';
+import ActionButtonsRow from './keyboard/ActionButtonsRow.vue';
+
+/**
+ * Props del componente JapaneseKeyBoard
+ * @typedef {Object} JapaneseKeyBoardProps
+ * @property {string} modelValue - Valor del input actual (v-model)
+ */
 const props = defineProps({
   modelValue: {
     type: String,
@@ -12,47 +95,66 @@ const props = defineProps({
   }
 });
 
+/**
+ * Eventos emitidos por el componente
+ * @typedef {Object} JapaneseKeyBoardEmits
+ * @property {Function} text-input - Se emite cuando se ingresa un carácter
+ * @property {Function} clear - Se emite cuando se limpia el input
+ * @property {Function} close - Se emite cuando se cierra el teclado
+ * @property {Function} apply-special - Se emite cuando se aplica un carácter especial
+ */
 const emit = defineEmits(['text-input', 'clear', 'close', 'apply-special']);
 
+// Composables
 const { playKeyboardKey, playButtonClick } = useSounds();
 const { t } = useI18n();
 
+// Estado reactivo
 const currentMode = ref('hiragana');
-const currentInputText = ref('');
-const valorInput = ref('');
 
-// Datos de los caracteres Hiragana organizados por filas
-const hiraganaVocals = ['あ', 'い', 'う', 'え', 'お'];
-const hiraganaRows = [
-  ['か', 'き', 'く', 'け', 'こ'],
-  ['さ', 'し', 'す', 'せ', 'そ'],
-  ['た', 'ち', 'つ', 'て', 'と'],
-  ['な', 'に', 'ぬ', 'ね', 'の'],
-  ['は', 'ひ', 'ふ', 'へ', 'ほ'],
-  ['ま', 'み', 'む', 'め', 'も'],
-  ['や', 'ゆ', 'よ'],
-  ['ら', 'り', 'る', 'れ', 'ろ'],
-  ['わ', 'を'],
-];
-const hiraganaSmallY = ['ゃ', 'ゅ', 'ょ'];
+/**
+ * Configuración de caracteres japoneses
+ * Organizada en estructuras de datos para fácil mantenimiento
+ */
+const JAPANESE_CHARACTERS = {
+  hiragana: {
+    vocals: ['あ', 'い', 'う', 'え', 'お'],
+    consonantRows: [
+      ['か', 'き', 'く', 'け', 'こ'],
+      ['さ', 'し', 'す', 'せ', 'そ'],
+      ['た', 'ち', 'つ', 'て', 'と'],
+      ['な', 'に', 'ぬ', 'ね', 'の'],
+      ['は', 'ひ', 'ふ', 'へ', 'ほ'],
+      ['ま', 'み', 'む', 'め', 'も'],
+      ['や', 'ゆ', 'よ'],
+      ['ら', 'り', 'る', 'れ', 'ろ'],
+      ['わ', 'を']
+    ],
+    smallY: ['ゃ', 'ゅ', 'ょ'],
+    special: ['っ', 'ん']
+  },
+  katakana: {
+    vocals: ['ア', 'イ', 'ウ', 'エ', 'オ'],
+    consonantRows: [
+      ['カ', 'キ', 'ク', 'ケ', 'コ'],
+      ['サ', 'シ', 'ス', 'セ', 'ソ'],
+      ['タ', 'チ', 'ツ', 'テ', 'ト'],
+      ['ナ', 'ニ', 'ヌ', 'ネ', 'ノ'],
+      ['ハ', 'ヒ', 'フ', 'ヘ', 'ホ'],
+      ['マ', 'ミ', 'ム', 'メ', 'モ'],
+      ['ヤ', 'ユ', 'ヨ'],
+      ['ラ', 'リ', 'ル', 'レ', 'ロ'],
+      ['ワ', 'ヲ']
+    ],
+    smallY: ['ャ', 'ュ', 'ョ'],
+    special: ['ッ', 'ン']
+  }
+};
 
-// Datos de los caracteres Katakana (debes completar todas las filas)
-const katakanaVocals = ['ア', 'イ', 'ウ', 'エ', 'オ'];
-const katakanaRows = [
-  ['カ', 'キ', 'ク', 'ケ', 'コ'],
-  ['サ', 'シ', 'ス', 'セ', 'ソ'],
-  ['タ', 'チ', 'ツ', 'テ', 'ト'],
-  ['ナ', 'ニ', 'ヌ', 'ネ', 'ノ'],
-  ['ハ', 'ヒ', 'フ', 'ヘ', 'ホ'],
-  ['マ', 'ミ', 'ム', 'メ', 'モ'],
-  ['ヤ', 'ユ', 'ヨ'],
-  ['ラ', 'リ', 'ル', 'レ', 'ロ'],
-  ['ワ', 'ヲ'],
-];
-const katakanaSmallY = ['ャ', 'ュ', 'ョ'];
-
-// Mapeo para la aplicación de Dakuten (゛)
-const dakutenMap = {
+/**
+ * Mapeo de caracteres para dakuten (゛)
+ */
+const DAKUTEN_MAP = {
   'か': 'が', 'き': 'ぎ', 'く': 'ぐ', 'け': 'げ', 'こ': 'ご',
   'さ': 'ざ', 'し': 'じ', 'す': 'ず', 'せ': 'ぜ', 'そ': 'ぞ',
   'た': 'だ', 'ち': 'ぢ', 'つ': 'づ', 'て': 'で', 'と': 'ど',
@@ -60,152 +162,123 @@ const dakutenMap = {
   'カ': 'ガ', 'キ': 'ギ', 'ク': 'グ', 'ケ': 'ゲ', 'コ': 'ゴ',
   'サ': 'ザ', 'シ': 'ジ', 'ス': 'ズ', 'セ': 'ゼ', 'ソ': 'ゾ',
   'タ': 'ダ', 'チ': 'ヂ', 'ツ': 'ヅ', 'テ': 'デ', 'ト': 'ド',
-  'ハ': 'バ', 'ヒ': 'ビ', 'フ': 'ブ', 'ヘ': 'ベ', 'ホ': 'ボ',
-};
-
-// Mapeo para la aplicación de Handakuten (゜)
-const handakutenMap = {
-  'は': 'ぱ', 'ひ': 'ぴ', 'ふ': 'ぷ', 'へ': 'ぺ', 'ほ': 'ぽ',
-  'ハ': 'パ', 'ヒ': 'ピ', 'フ': 'プ', 'ヘ': 'ペ', 'ホ': 'ポ',
+  'ハ': 'バ', 'ヒ': 'ビ', 'フ': 'ブ', 'ヘ': 'ベ', 'ホ': 'ボ'
 };
 
 /**
- * Añade el carácter pulsado al texto de entrada.
- * @param {string} char - El carácter a añadir.
+ * Mapeo de caracteres para handakuten (゜)
+ */
+const HANDAKUTEN_MAP = {
+  'は': 'ぱ', 'ひ': 'ぴ', 'ふ': 'ぷ', 'へ': 'ぺ', 'ほ': 'ぽ',
+  'ハ': 'パ', 'ヒ': 'ピ', 'フ': 'プ', 'ヘ': 'ペ', 'ホ': 'ポ'
+};
+
+// Computed properties para obtener los caracteres según el modo actual
+const currentVocals = computed(() => JAPANESE_CHARACTERS[currentMode.value].vocals);
+const currentConsonantRows = computed(() => JAPANESE_CHARACTERS[currentMode.value].consonantRows);
+const currentSmallY = computed(() => JAPANESE_CHARACTERS[currentMode.value].smallY);
+
+/**
+ * Maneja la entrada de un carácter individual
+ * @param {string} char - Carácter japonés a procesar
+ * @emits text-input
  */
 const handleKeyPress = (char) => {
   playKeyboardKey();
-  currentInputText.value += char;
   emit('text-input', char);
 };
 
 /**
- * Elimina el último carácter del texto de entrada.
- * @returns {void}
+ * Maneja el cambio de modo del teclado
+ * @param {string} mode - Nuevo modo ('hiragana' | 'katakana')
  */
-
-const handleClear = () => {
-  playButtonClick();
-  currentInputText.value = '';
-  emit('clear');
-};
-
-/**
- * Cambia el modo de teclado entre Hiragana y Katakana.
- * @param {string} mode - El nuevo modo ('hiragana' o 'katakana').
- */
-const changeMode = (mode) => {
+const handleModeChange = (mode) => {
   playButtonClick();
   currentMode.value = mode;
 };
 
 /**
- * Aplica caracteres especiales (Dakuten o Handakuten) al último carácter del input.
- * @param {string} type - El tipo de carácter especial a aplicar ('dakuten' o 'handakuten').
+ * Maneja la aplicación de caracteres especiales (dakuten/handakuten)
+ * @param {string} type - Tipo de carácter especial ('dakuten' | 'handakuten')
+ * @emits apply-special
  */
-const applySpecialChar = (type) => {
+const handleSpecialCharacter = (type) => {
   playKeyboardKey();
-  
-  // Emitir el evento para que el componente padre maneje la conversión
   emit('apply-special', type);
 };
 
+/**
+ * Maneja la limpieza del input
+ * @emits clear
+ */
+const handleClearInput = () => {
+  playButtonClick();
+  emit('clear');
+};
+
+/**
+ * Maneja el cierre del teclado
+ * @emits close
+ */
+const handleClose = () => {
+  playButtonClick();
+  emit('close');
+};
+
+// Exposición de variables y funciones para testing
+defineExpose({
+  currentMode,
+  JAPANESE_CHARACTERS,
+  DAKUTEN_MAP,
+  HANDAKUTEN_MAP,
+  handleKeyPress,
+  handleModeChange,
+  handleSpecialCharacter,
+  handleClearInput,
+  handleClose
+});
 </script>
 
-<template>
-<div class="japanese-keyboard flex flex-col gap-3 p-4 bg-Marfil backdrop-blur-sm rounded-2xl shadow-xl border border-platinum max-w-md w-full max-h-[calc(100vh-370px)] overflow-y-auto">
-    <!-- Header con botón de cerrar -->
-    <div class="flex justify-between items-center mb-2">
-      <h3 class="text-sm font-semibold text-grisTinta">
-        {{ t('japaneseKeyboard') }}
-      </h3>
-      <button
-        @click="() => { playButtonClick(); emit('close'); }"
-        class="btn-3d btn-3d-danger text-xs px-2 py-1"
-      >
-        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Botones de modo -->
-    <div class="flex justify-center gap-2 mb-2">
-      <button
-        @click="changeMode('hiragana')"
-        :class="currentMode === 'hiragana' ? 'btn-3d btn-3d-green-primary' : 'btn-3d btn-3d-secondary'"
-        class="px-3 py-1 text-sm font-semibold"
-      >
-        ひらがな
-      </button>
-      <button
-        @click="changeMode('katakana')"
-        :class="currentMode === 'katakana' ? 'btn-3d btn-3d-green-primary' : 'btn-3d btn-3d-secondary'"
-        class="px-3 py-1 text-sm font-semibold"
-      >
-        カタカナ
-      </button>
-    </div>
-
-<div class="flex flex-col gap-1">
-      <div class="flex justify-center gap-1">
-        <KeyButton
-          v-for="char in (currentMode === 'hiragana' ? hiraganaVocals : katakanaVocals)"
-          :key="char"
-          :char="char"
-          :buttonClass="'text-sm'"
-          @click="handleKeyPress(char)"
-        />
-      </div>
-
-      <div class="flex justify-center gap-1" v-for="(row, index) in (currentMode === 'hiragana' ? hiraganaRows : katakanaRows)" :key="index">
-        <KeyButton
-          v-for="char in row"
-          :key="char"
-          :char="char"
-          :buttonClass="'text-sm'"
-          @click="handleKeyPress(char)"
-        />
-      </div>
-
-      <div class="flex justify-center gap-1">
-        <KeyButton
-          v-for="char in (currentMode === 'hiragana' ? hiraganaSmallY : katakanaSmallY)"
-          :key="char"
-          :char="char"
-          :buttonClass="'text-sm'"
-          @click="handleKeyPress(char)"
-        />
-      </div>
-
-      <div class="flex justify-center gap-1 mt-2">
-        <KeyButton char="っ" @click="handleKeyPress('っ')" :buttonClass="'btn-3d-green-light text-xs'" />
-        <KeyButton char="ん" @click="handleKeyPress('ん')" :buttonClass="'btn-3d-green-light text-xs'" />
-      </div>
-
-      <!-- Botones para caracteres especiales -->
-      <div class="flex justify-center gap-1 mt-1">
-        <KeyButton 
-          char="゛" 
-          @click="() => applySpecialChar('dakuten')" 
-          :buttonClass="'btn-3d-green-medium text-xs'" 
-          :title="t('dakutenTooltip')"
-        />
-        <KeyButton 
-          char="゜" 
-          @click="() => applySpecialChar('handakuten')" 
-          :buttonClass="'btn-3d-green-medium text-xs'" 
-          :title="t('handakutenTooltip')"
-        />
-        <KeyButton :char="t('clearButton')" @click="handleClear()" :buttonClass="'btn-3d-danger text-xs'" />
-      </div>
-    </div>
-  </div>
-
-</template>
-
 <style scoped>
-/* Estilos para la barra de scroll - WebKit (Chrome, Safari, Edge) */
+/**
+ * Estilos del componente JapaneseKeyBoard
+ * Optimizado para múltiples dispositivos y accesibilidad
+ */
+.japanese-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: var(--color-marfil, #F5F5DC);
+  backdrop-filter: blur(4px);
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-platinum, #E5E7EB);
+  max-width: 28rem;
+  width: 100%;
+  max-height: calc(100vh - 370px);
+  overflow-y: auto;
+  
+  /* Mejoras para dispositivos táctiles */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.keyboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+/* Estilos de scroll optimizados */
 .japanese-keyboard::-webkit-scrollbar {
   width: 4px;
 }
@@ -217,28 +290,49 @@ const applySpecialChar = (type) => {
 .japanese-keyboard::-webkit-scrollbar-thumb {
   background: rgba(107, 114, 128, 0.3);
   border-radius: 2px;
+  transition: background-color 0.2s ease;
 }
 
 .japanese-keyboard::-webkit-scrollbar-thumb:hover {
   background: rgba(107, 114, 128, 0.5);
 }
 
-/* Estilos para Firefox */
+/* Soporte para Firefox */
 .japanese-keyboard {
   scrollbar-width: thin;
   scrollbar-color: rgba(107, 114, 128, 0.3) transparent;
 }
 
-/* Alternativa: Ocultar completamente la barra de scroll */
-/* Descomenta las siguientes líneas si prefieres ocultar completamente la barra */
-/*
-.japanese-keyboard::-webkit-scrollbar {
-  display: none;
+/* Adaptaciones para dispositivos móviles */
+@media (max-width: 640px) {
+  .japanese-keyboard {
+    max-width: 100%;
+    max-height: calc(100vh - 300px);
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+  
+  .keyboard-grid {
+    gap: 0.5rem;
+  }
+  
+  .keyboard-row {
+    gap: 0.5rem;
+  }
 }
 
-.japanese-keyboard {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .japanese-keyboard {
+    transition: none;
+  }
 }
-*/
+
+/* Modo de alto contraste */
+@media (prefers-contrast: high) {
+  .japanese-keyboard {
+    border-width: 2px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  }
+}
 </style>

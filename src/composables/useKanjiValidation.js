@@ -6,6 +6,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
   const validReadings = ref({
     AllValidOnReadings: initialValidReadings.AllValidOnReadings || [],
     AllValidKunReadings: initialValidReadings.AllValidKunReadings || [],
+    AllValidMeanings: initialValidReadings.AllValidMeanings || [],
   });
 
   const userInputMeaning = ref("");
@@ -23,6 +24,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     validReadings.value = {
       AllValidOnReadings: newValidReadings.AllValidOnReadings || [],
       AllValidKunReadings: newValidReadings.AllValidKunReadings || [],
+      AllValidMeanings: newValidReadings.AllValidMeanings || [],
     };
   };
 
@@ -214,9 +216,17 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
 
     // Validar cada campo disponible
     if (meaningAvailable.value) {
-      const result = validateField(
+      // Usar la lista de significados válidos si está disponible, sino usar el significado principal
+      const validMeanings =
+        validReadings.value &&
+        Array.isArray(validReadings.value.AllValidMeanings) &&
+        validReadings.value.AllValidMeanings.length > 0
+          ? validReadings.value.AllValidMeanings
+          : [props.CorrectMeaning];
+
+      const result = validateReadingField(
         userInputMeaning.value,
-        props.CorrectMeaning,
+        validMeanings,
         "significado"
       );
       if (result.isCorrect) {
@@ -316,6 +326,8 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
       });
     }
   };
+
+  console.log("useKanjiValidation initialized with props:", props);
 
   return {
     // Estado

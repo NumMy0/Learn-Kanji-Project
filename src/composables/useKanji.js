@@ -11,6 +11,7 @@ const globalState = {
     CorrectReadingKun: "",
     AllValidOnReadings: [],
     AllValidKunReadings: [],
+    AllValidMeanings: [],
   }),
   sublevelData: reactive({
     currentLevel: "",
@@ -176,6 +177,10 @@ export function useKanji() {
 
       // Los significados siempre se muestran en inglés como vienen de la API
       kanjiData.CorrectMeaning = originalMeaning;
+
+      // Almacenar todos los significados válidos para validación
+      kanjiData.AllValidMeanings =
+        kanjiDetails.meanings?.length > 0 ? kanjiDetails.meanings : [];
 
       return kanjiData;
     } catch (error) {
@@ -537,6 +542,10 @@ export function useKanji() {
       // Los significados siempre se muestran en inglés como vienen de la API
       kanjiData.CorrectMeaning = originalMeaning;
 
+      // Almacenar todos los significados válidos para validación
+      kanjiData.AllValidMeanings =
+        kanjiDetails.meanings?.length > 0 ? kanjiDetails.meanings : [];
+
       return kanjiData;
     } catch (err) {
       console.error("Error fetching kanji data:", err);
@@ -566,6 +575,7 @@ export function useKanji() {
     kanjiData.CorrectReadingKun = "";
     kanjiData.AllValidOnReadings = [];
     kanjiData.AllValidKunReadings = [];
+    kanjiData.AllValidMeanings = [];
     error.value = null;
   };
 

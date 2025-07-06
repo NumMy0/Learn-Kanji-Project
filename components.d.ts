@@ -8,10 +8,14 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ActionButtonsRow: typeof import('./src/components/keyboard/ActionButtonsRow.vue')['default']
     JapaneseKeyBoard: typeof import('./src/components/JapaneseKeyBoard.vue')['default']
     KanjiCard: typeof import('./src/components/KanjiCard.vue')['default']
+    KeyboardHeader: typeof import('./src/components/keyboard/KeyboardHeader.vue')['default']
     KeyButton: typeof import('./src/components/KeyButton.vue')['default']
+    ModeSelector: typeof import('./src/components/keyboard/ModeSelector.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SpecialCharacterRow: typeof import('./src/components/keyboard/SpecialCharacterRow.vue')['default']
   }
 }

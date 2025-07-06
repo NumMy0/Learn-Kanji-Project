@@ -1,6 +1,37 @@
+<!--
+  KanjiCard.vue
+  
+  Componente principal para mostrar y practicar kanjis.
+  Maneja la visualización, validación y navegación de kanjis del sistema de aprendizaje.
+  
+  Características principales:
+  - Mostrar kanji con lecturas y significados
+  - Validación de respuestas con soporte para múltiples lecturas/significados
+  - Modo estudio y modo práctica
+  - Navegación entre kanjis
+  - Teclado japonés integrado
+  - Configuración de tema, sonido e idioma
+  - Estadísticas de progreso y tiempo
+  - Efectos visuales como cursor trail
+  
+  @component
+  @author Learn Kanji Project
+  @since 1.0.0
+  @example
+  <KanjiCard
+    :Kanji="山"
+    :CorrectMeaning="mountain"
+    :CorrectReadingOn="サン"
+    :CorrectReadingKun="やま"
+  />
+-->
+
 <script setup>
+// ===== IMPORTS =====
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute } from 'vue-router';
+
+// Composables
 import { useMotion } from '../composables/useMotion.js';
 import { useKanji } from '../composables/useKanji.js';
 import { useSounds } from '../composables/useSounds.js';
@@ -10,51 +41,29 @@ import { useKanjiValidation } from '../composables/useKanjiValidation.js';
 import { useJapaneseKeyboard } from '../composables/useJapaneseKeyboard.js';
 import { useI18n } from '../composables/useI18n.js';
 import { useModals } from '../composables/useModals.js';
+
+// Components
 import JapaneseKeyBoard from './JapaneseKeyBoard.vue';
 
-const { animateIn } = useMotion();
-const route = useRoute();
-const { playButtonClick, playCorrectAnswer, playIncorrectAnswer, soundEnabled, toggleSound } = useSounds();
-const { currentTheme, isDarkMode, themeIcon, toggleTheme, setTheme } = useTheme();
-const { cursorTrails, initCursorTrail, cleanupCursorTrail } = useCursorTrail();
-const { 
-    sublevelData, 
-    navigationData,
-    kanjiData,
-    goToNextKanji,
-    goToPreviousKanji,
-    goToRandomKanji
-} = useKanji();
-
-// Usar composable de modales
-const {
-  showConfigModal,
-  openConfigModal,
-  closeModal,
-  handleKeydown
-} = useModals();
-
-// Función wrapper para pasar dependencias al composable de modales
-const openConfigModalWrapper = () => {
-  openConfigModal(playButtonClick);
-};
-
-// Estado para detectar pantalla pequeña
-const isSmallScreen = ref(false);
-
-// Función para verificar el tamaño de la pantalla
-const checkScreenSize = () => {
-  isSmallScreen.value = window.innerWidth < 768; // md breakpoint en Tailwind
-};
-
+// ===== PROPS =====
+/**
+ * Props del componente KanjiCard
+ * @typedef {Object} KanjiCardProps
+ * @property {string} Kanji - El kanji a mostrar
+ * @property {string} CorrectMeaning - El significado correcto principal
+ * @property {string} CorrectReadingOn - La lectura On correcta principal
+ * @property {string} CorrectReadingKun - La lectura Kun correcta principal
+ */
 const props = defineProps({
     Kanji: {
         type: String,
-        required: true
+        required: true,
+        validator: (value) => value.length > 0
     },
     CorrectMeaning: {
         type: String,
-        required: true
+        required: true,
+        validator: (value) => value.length > 0
     },
     CorrectReadingOn: {
         type: String,
@@ -66,79 +75,85 @@ const props = defineProps({
     }
 });
 
-// Crear un computed reactivo para las lecturas válidas
-const validReadings = computed(() => ({
-    AllValidOnReadings: kanjiData.AllValidOnReadings || [],
-    AllValidKunReadings: kanjiData.AllValidKunReadings || []
-}));
-
-
-
-// Referencia para la validación que se podrá actualizar
-const validationRef = ref(null);
-
-// Usar los composables de validación y teclado
-const validation = useKanjiValidation(props, validReadings.value);
-validationRef.value = validation; // Guardar la referencia
-const keyboard = useJapaneseKeyboard();
+// ===== COMPOSABLES SETUP =====
+const route = useRoute();
+const { animateIn } = useMotion();
+const { playButtonClick, playCorrectAnswer, playIncorrectAnswer, soundEnabled, toggleSound } = useSounds();
+const { currentTheme, isDarkMode, themeIcon, toggleTheme, setTheme } = useTheme();
+const { cursorTrails, initCursorTrail, cleanupCursorTrail } = useCursorTrail();
 const { t, tInterpolate, toggleLanguage, languageFlag, languageName } = useI18n();
 
-// Vigilar cambios en kanjiData para actualizar las validaciones
-watch(() => [kanjiData.AllValidOnReadings, kanjiData.AllValidKunReadings], () => {
+// Kanji data management
+const { 
+    sublevelData, 
+    navigationData,
+    kanjiData,
+    goToNextKanji,
+    goToPreviousKanji,
+    goToRandomKanji
+} = useKanji();
 
-    
-    // Actualizar el objeto de lecturas válidas usado por la validación
-    if (validationRef.value && validationRef.value.updateValidReadings) {
-        validationRef.value.updateValidReadings({
-            AllValidOnReadings: kanjiData.AllValidOnReadings || [],
-            AllValidKunReadings: kanjiData.AllValidKunReadings || []
-        });
-    }
-}, { deep: true });
+// Modal management
+const {
+  showConfigModal,
+  openConfigModal,
+  closeModal,
+  handleKeydown
+} = useModals();
 
-// Estados adicionales
+// ===== REACTIVE DATA =====
+// Screen and UI state
+const isSmallScreen = ref(false);
 const studyMode = ref(false);
 const loadingNavigation = ref(false);
 
-// Estados para el contador de aciertos, temporizador y finalización del test
+// Test statistics
 const correctAnswersCount = ref(0);
 const timer = ref(0);
 const isTimerRunning = ref(false);
 const testCompleted = ref(false);
 const timerInterval = ref(null);
 
-// Formatea el tiempo en formato mm:ss
+// Validation system
+const validationRef = ref(null);
+
+// ===== COMPUTED PROPERTIES =====
+/**
+ * Computed para lecturas válidas reactivas
+ * Combina todas las lecturas válidas del kanji actual
+ */
+const validReadings = computed(() => ({
+    AllValidOnReadings: kanjiData.AllValidOnReadings || [],
+    AllValidKunReadings: kanjiData.AllValidKunReadings || [],
+    AllValidMeanings: kanjiData.AllValidMeanings || []
+}));
+
+/**
+ * Computed para tiempo formateado
+ * Convierte segundos a formato mm:ss
+ */
 const formattedTime = computed(() => {
   const minutes = Math.floor(timer.value / 60);
   const seconds = timer.value % 60;
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 });
 
-// Inicia el temporizador
-const startTimer = () => {
-  if (isTimerRunning.value) return;
-  isTimerRunning.value = true;
-  timerInterval.value = setInterval(() => {
-    timer.value++;
-  }, 1000);
-};
+/**
+ * Computed para verificar si estamos en modo subnivel
+ * Determina si la navegación debe mostrar controles específicos de subnivel
+ */
+const isInSublevelMode = computed(() => {
+    return route.query.sublevel && 
+           sublevelData.kanjiList.length > 0 && 
+           sublevelData.totalSublevels > 1;
+});
 
-// Detiene el temporizador
-const stopTimer = () => {
-  if (timerInterval.value) {
-    clearInterval(timerInterval.value);
-    isTimerRunning.value = false;
-  }
-};
+// ===== VALIDATION AND KEYBOARD SETUP =====
+const validation = useKanjiValidation(props, validReadings.value);
+validationRef.value = validation;
+const keyboard = useJapaneseKeyboard();
 
-// Reinicia el temporizador y el contador
-const resetStats = () => {
-  correctAnswersCount.value = 0;
-  timer.value = 0;
-  testCompleted.value = false;
-};
-
-// Funciones derivadas de los composables
+// Extract validation functions and state
 const {
     userInputMeaning,
     userInputOn,
@@ -161,6 +176,7 @@ const {
     resetValidation
 } = validation;
 
+// Extract keyboard functions and state
 const {
     showKeyboard,
     activeInput,
@@ -170,14 +186,77 @@ const {
     setFirstAvailableInput
 } = keyboard;
 
-// Computed para verificar si estamos en modo subnivel
-const isInSublevelMode = computed(() => {
-    return route.query.sublevel && 
-           sublevelData.kanjiList.length > 0 && 
-           sublevelData.totalSublevels > 1;
-});
+// ===== WATCHERS =====
+/**
+ * Watcher para actualizar validaciones cuando cambien los datos del kanji
+ * Sincroniza las lecturas válidas con el sistema de validación
+ */
+watch(() => [kanjiData.AllValidOnReadings, kanjiData.AllValidKunReadings, kanjiData.AllValidMeanings], () => {
+    if (validationRef.value && validationRef.value.updateValidReadings) {
+        validationRef.value.updateValidReadings({
+            AllValidOnReadings: kanjiData.AllValidOnReadings || [],
+            AllValidKunReadings: kanjiData.AllValidKunReadings || [],
+            AllValidMeanings: kanjiData.AllValidMeanings || []
+        });
+    }
+}, { deep: true });
 
-// Funciones de navegación
+// ===== UTILITY FUNCTIONS =====
+/**
+ * Función para verificar el tamaño de la pantalla
+ * Actualiza el estado de isSmallScreen basado en el breakpoint md de Tailwind
+ */
+const checkScreenSize = () => {
+  isSmallScreen.value = window.innerWidth < 768;
+};
+
+/**
+ * Función wrapper para abrir el modal de configuración
+ * Incluye la reproducción de sonido
+ */
+const openConfigModalWrapper = () => {
+  openConfigModal(playButtonClick);
+};
+
+// ===== TIMER FUNCTIONS =====
+/**
+ * Inicia el temporizador del test
+ * Solo se ejecuta si no está ya corriendo
+ */
+const startTimer = () => {
+  if (isTimerRunning.value) return;
+  isTimerRunning.value = true;
+  timerInterval.value = setInterval(() => {
+    timer.value++;
+  }, 1000);
+};
+
+/**
+ * Detiene el temporizador del test
+ * Limpia el interval y actualiza el estado
+ */
+const stopTimer = () => {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value);
+    isTimerRunning.value = false;
+  }
+};
+
+/**
+ * Reinicia las estadísticas del test
+ * Vuelve a cero el contador y el temporizador
+ */
+const resetStats = () => {
+  correctAnswersCount.value = 0;
+  timer.value = 0;
+  testCompleted.value = false;
+};
+
+// ===== NAVIGATION FUNCTIONS =====
+/**
+ * Navega al siguiente kanji
+ * Mantiene el estado del modo estudio y maneja la finalización del test
+ */
 const goToNextKanjiManual = async () => {
     playButtonClick();
     try {
@@ -185,24 +264,29 @@ const goToNextKanjiManual = async () => {
         const wasInStudyMode = studyMode.value;
         await goToNextKanji();
         resetCard();
+        
         // Restaurar modo estudio si estaba activo
         if (wasInStudyMode) {
             studyMode.value = true;
             showAnswer.value = true;
         }
         
-        // Verificar si se ha completado el test (llegado al último kanji del nivel)
+        // Verificar si se ha completado el test
         if (navigationData.currentKanjiIndex === navigationData.kanjiList.length - 1) {
             stopTimer();
             testCompleted.value = true;
         }
     } catch (error) {
-        console.warn('Error al navegar:', error.message);
+        console.warn('Error al navegar al siguiente kanji:', error.message);
     } finally {
         loadingNavigation.value = false;
     }
 };
 
+/**
+ * Navega al kanji anterior
+ * Mantiene el estado del modo estudio
+ */
 const goToPreviousKanjiAction = async () => {    
     playButtonClick();
     try {
@@ -210,18 +294,23 @@ const goToPreviousKanjiAction = async () => {
         const wasInStudyMode = studyMode.value;
         await goToPreviousKanji();
         resetCard();
+        
         // Restaurar modo estudio si estaba activo
         if (wasInStudyMode) {
             studyMode.value = true;
             showAnswer.value = true;
         }
     } catch (error) {
-        console.warn('Error al navegar:', error.message);
+        console.warn('Error al navegar al kanji anterior:', error.message);
     } finally {
         loadingNavigation.value = false;
     }
 };
 
+/**
+ * Navega a un kanji aleatorio
+ * Mantiene el estado del modo estudio
+ */
 const goToRandomKanjiManual = async () => {
     playButtonClick();
     try {
@@ -229,6 +318,7 @@ const goToRandomKanjiManual = async () => {
         const wasInStudyMode = studyMode.value;
         await goToRandomKanji();
         resetCard();
+        
         // Restaurar modo estudio si estaba activo
         if (wasInStudyMode) {
             studyMode.value = true;
@@ -241,29 +331,36 @@ const goToRandomKanjiManual = async () => {
     }
 };
 
-// Función para validar respuesta usando el composable
+// ===== VALIDATION AND CARD ACTIONS =====
+/**
+ * Valida la respuesta del usuario
+ * Maneja el inicio del temporizador y actualiza las estadísticas
+ */
 const validateAnswer = () => {
-    // Si es la primera respuesta del test, iniciamos el temporizador
+    // Iniciar temporizador en la primera respuesta del test
     if (!isTimerRunning.value && !studyMode.value) {
         startTimer();
     }
     
-    // Validamos la respuesta
+    // Validar usando el composable
     validation.validateAnswer(playButtonClick, playCorrectAnswer, playIncorrectAnswer, animateIn);
     
-    // Si la respuesta fue correcta, incrementamos el contador
+    // Actualizar contador de aciertos
     if (isCorrect.value && showAnswer.value) {
         correctAnswersCount.value++;
     }
     
-    // Verificar si se ha completado el test (llegado al máximo de aciertos)
+    // Verificar finalización del test
     if (correctAnswersCount.value >= navigationData.kanjiList.length) {
         stopTimer();
         testCompleted.value = true;
     }
 };
 
-// Función para resetear el estado completo
+/**
+ * Resetea el estado completo de la tarjeta
+ * Limpia validaciones y restaura inputs
+ */
 const resetCard = () => {
     playButtonClick();
     resetValidation();
@@ -271,70 +368,110 @@ const resetCard = () => {
     setFirstAvailableInput({ meaningAvailable, onReadingAvailable, kunReadingAvailable });
 };
 
-// Función para alternar modo estudio
+/**
+ * Alterna entre modo estudio y modo práctica
+ * Maneja el temporizador y las estadísticas
+ */
 const toggleStudyMode = () => {
     playButtonClick();
     studyMode.value = !studyMode.value;
+    
     if (studyMode.value) {
-        stopTimer(); // Detener el temporizador en modo estudio
+        stopTimer();
         showAnswer.value = true;
     } else {
         resetCard();
-        resetStats(); // Reiniciar estadísticas al salir del modo estudio
+        resetStats();
     }
 };
 
-// Función para reiniciar completamente el test
+/**
+ * Reinicia completamente el test
+ * Vuelve al primer kanji y resetea todas las estadísticas
+ */
 const restartTest = () => {
     playButtonClick();
     resetStats();
     resetCard();
-    // Si estamos en un nivel o sublevel, reiniciamos al primer kanji
+    
+    // Navegar al primer kanji si hay una lista disponible
     if (navigationData.kanjiList.length > 0) {
-        goToNextKanji(0); // Ir al primer kanji (índice 0)
+        goToNextKanji(0);
     }
 };
 
-// Funciones del teclado japonés
+// ===== KEYBOARD FUNCTIONS =====
+/**
+ * Maneja la entrada de caracteres desde el teclado japonés
+ * @param {string} char - Carácter ingresado
+ */
 const handleKeyboardInput = (char) => {
-    keyboard.handleKeyboardInput(char, { userInputMeaning, userInputOn, userInputKun }, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
+    keyboard.handleKeyboardInput(
+        char, 
+        { userInputMeaning, userInputOn, userInputKun }, 
+        { meaningAvailable, onReadingAvailable, kunReadingAvailable }
+    );
 };
 
+/**
+ * Maneja la limpieza del teclado japonés
+ * Limpia todos los campos de entrada
+ */
 const handleKeyboardClear = () => {
-    keyboard.handleKeyboardClear({ userInputMeaning, userInputOn, userInputKun }, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
+    keyboard.handleKeyboardClear(
+        { userInputMeaning, userInputOn, userInputKun }, 
+        { meaningAvailable, onReadingAvailable, kunReadingAvailable }
+    );
 };
 
+/**
+ * Maneja la conversión de caracteres especiales
+ * @param {string} type - Tipo de conversión ('dakuten' | 'handakuten')
+ */
 const handleSpecialCharConversion = (type) => {
-    keyboard.handleSpecialChar(type, { userInputMeaning, userInputOn, userInputKun }, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
+    keyboard.handleSpecialChar(
+        type, 
+        { userInputMeaning, userInputOn, userInputKun }, 
+        { meaningAvailable, onReadingAvailable, kunReadingAvailable }
+    );
 };
 
+/**
+ * Establece el input activo para el teclado
+ * @param {string} inputType - Tipo de input ('meaning' | 'on' | 'kun')
+ */
 const setActiveInputHandler = (inputType) => {
     keyboard.setActiveInput(inputType, { meaningAvailable, onReadingAvailable, kunReadingAvailable });
 };
 
+/**
+ * Alterna la visibilidad del teclado japonés
+ * Incluye reproducción de sonido
+ */
 const toggleKeyboardHandler = () => {
     keyboard.toggleKeyboard(playButtonClick);
 };
 
-
-
+// ===== LIFECYCLE HOOKS =====
+/**
+ * Hook onMounted
+ * Inicializa efectos visuales, configuraciones y animaciones
+ */
 onMounted(async () => {
-    // Inicializar cursor trail effect
+    // Inicializar efectos visuales
     initCursorTrail();
     
-    // Establecer el primer input disponible como activo
+    // Configurar inputs y estadísticas
     setFirstAvailableInput({ meaningAvailable, onReadingAvailable, kunReadingAvailable });
-    
-    // Reiniciar estadísticas
     resetStats();
     
-    // Verificar tamaño de pantalla inicialmente
+    // Configurar detección de pantalla
     checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
     
-    // Esperar a que el DOM esté completamente renderizado y animar
+    // Animar entrada del componente
     await nextTick();
     setTimeout(() => {
-        // Animar la entrada de la card
         animateIn('.kanji-card', {
             y: [50, 0],
             opacity: [0, 1],
@@ -345,11 +482,18 @@ onMounted(async () => {
     }, 100);
 });
 
+/**
+ * Hook onUnmounted
+ * Limpia efectos visuales y timers
+ */
 onUnmounted(() => {
-    // Limpiar el cursor trail
+    // Limpiar efectos visuales
     cleanupCursorTrail();
     
-    // Asegurarse de detener el temporizador
+    // Limpiar listeners
+    window.removeEventListener('resize', checkScreenSize);
+    
+    // Detener temporizador
     stopTimer();
 });
 
@@ -531,9 +675,16 @@ onUnmounted(() => {
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                     </svg>
                   </div>
-                  <div>
+                  <div class="flex-1">
                     <p class="text-xs font-medium text-azulIndigo">{{ t('meaning') }}</p>
+                    <!-- Mostrar principal y alternativas si existen -->
                     <p class="text-base font-semibold text-grisTinta">{{ CorrectMeaning }}</p>
+                    <div v-if="kanjiData.AllValidMeanings && kanjiData.AllValidMeanings.length > 1" class="mt-1">
+                      <p class="text-xs text-grisTinta opacity-75">{{ t('alternatives') }}:</p>
+                      <p class="text-sm text-grisTinta">
+                        {{ kanjiData.AllValidMeanings.filter(m => m !== CorrectMeaning).join(', ') }}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -548,9 +699,16 @@ onUnmounted(() => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-1l-4 4z"></path>
                       </svg>
                     </div>
-                    <div>
+                    <div class="flex-1">
                       <p class="text-xs font-medium text-azulIndigo">{{ t('onReading') }}</p>
+                      <!-- Mostrar principal y alternativas si existen -->
                       <p class="text-base font-semibold text-grisTinta">{{ CorrectReadingOn }}</p>
+                      <div v-if="kanjiData.AllValidOnReadings && kanjiData.AllValidOnReadings.length > 1" class="mt-1">
+                        <p class="text-xs text-grisTinta opacity-75">{{ t('alternatives') }}:</p>
+                        <p class="text-sm text-grisTinta">
+                          {{ kanjiData.AllValidOnReadings.filter(r => r !== CorrectReadingOn).join(', ') }}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -563,9 +721,16 @@ onUnmounted(() => {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                       </svg>
                     </div>
-                    <div>
+                    <div class="flex-1">
                       <p class="text-xs font-medium text-azulIndigo">{{ t('kunReading') }}</p>
+                      <!-- Mostrar principal y alternativas si existen -->
                       <p class="text-base font-semibold text-grisTinta">{{ CorrectReadingKun }}</p>
+                      <div v-if="kanjiData.AllValidKunReadings && kanjiData.AllValidKunReadings.length > 1" class="mt-1">
+                        <p class="text-xs text-grisTinta opacity-75">{{ t('alternatives') }}:</p>
+                        <p class="text-sm text-grisTinta">
+                          {{ kanjiData.AllValidKunReadings.filter(r => r !== CorrectReadingKun).join(', ') }}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>

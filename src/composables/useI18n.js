@@ -19,6 +19,10 @@ const translations = {
     //Teclado Japonés
     japaneseKeyboard: "Teclado Japonés",
     clearButton: "Limpiar",
+    dakuten: "Dakuten",
+    handakuten: "Handakuten",
+    clear: "Limpiar",
+    clearTooltip: "Limpiar el campo de texto",
     dakutenTooltip: "Dakuten - Convierte か→が, さ→ざ, etc.",
     handakutenTooltip: "Handakuten - Convierte は→ぱ, ひ→ぴ, etc.",
 
@@ -142,6 +146,7 @@ const translations = {
     meaning: "Significado",
     onReading: "Lectura On (音読み)",
     kunReading: "Lectura Kun (訓読み)",
+    alternatives: "Alternativas",
     hint: "Pista",
     hintText: "Las lecturas comienzan con: {hint}",
     meaningPrefix: "Significado",
@@ -228,6 +233,10 @@ const translations = {
     // Teclado Japonés
     japaneseKeyboard: "Japanese Keyboard",
     clearButton: "Clear",
+    dakuten: "Dakuten",
+    handakuten: "Handakuten",
+    clear: "Clear",
+    clearTooltip: "Clear the text field",
     dakutenTooltip: "Dakuten - Converts か→が, さ→ざ, etc.",
     handakutenTooltip: "Handakuten - Converts は→ぱ, ひ→ぴ, etc.",
 
@@ -322,6 +331,7 @@ const translations = {
     meaning: "Meaning",
     onReading: "On Reading (音読み)",
     kunReading: "Kun Reading (訓読み)",
+    alternatives: "Alternatives",
     hint: "Hint",
     hintText: "Readings start with: {hint}",
     meaningPrefix: "Meaning",
