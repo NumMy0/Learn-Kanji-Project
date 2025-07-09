@@ -1,9 +1,13 @@
 import { ref, computed } from "vue";
 
-// Idioma actual (por defecto español)
+// Estado global del idioma (persistido en localStorage)
 const currentLanguage = ref(localStorage.getItem("language") || "es");
 
-// Textos de la aplicación en ambos idiomas
+/**
+ * Objeto de traducciones de la aplicación.
+ * Contiene todas las cadenas de texto en español e inglés.
+ * Estructura jerárquica para organizar traducciones por contexto.
+ */
 const translations = {
   es: {
     // Títulos principales
@@ -369,9 +373,23 @@ const translations = {
   },
 };
 
-// Composable para internacionalización
+/**
+ * Composable para internacionalización de la aplicación.
+ * Proporciona funcionalidad completa de traducción con soporte para:
+ * - Cambio dinámico de idioma (español/inglés)
+ * - Interpolación de parámetros en cadenas
+ * - Persistencia de preferencias en localStorage
+ * - Fallbacks automáticos
+ *
+ * @returns {Object} Funciones y estados para manejo de traducciones
+ */
 export function useI18n() {
-  // Función para cambiar idioma
+  /**
+   * Establece el idioma de la aplicación.
+   * Valida que el idioma sea soportado y lo persiste en localStorage.
+   *
+   * @param {string} lang - Código del idioma ("es" o "en")
+   */
   const setLanguage = (lang) => {
     if (lang === "es" || lang === "en") {
       currentLanguage.value = lang;
@@ -379,28 +397,38 @@ export function useI18n() {
     }
   };
 
-  // Función para alternar idioma
+  /**
+   * Alterna entre español e inglés.
+   * Método conveniente para cambiar idioma sin especificar cuál.
+   */
   const toggleLanguage = () => {
     const newLang = currentLanguage.value === "es" ? "en" : "es";
     setLanguage(newLang);
   };
 
-  // Función para obtener texto traducido
+  /**
+   * Obtiene una traducción usando notación de punto.
+   * Navega por la estructura jerárquica del objeto de traducciones.
+   *
+   * @param {string} key - Clave de traducción (ej: "levels.N5", "modals.close")
+   * @returns {string} Texto traducido o la clave si no se encuentra
+   */
   const t = (key) => {
     const keys = key.split(".");
     let value = translations[currentLanguage.value];
 
+    // Navegar por las claves anidadas
     for (const k of keys) {
       if (value && typeof value === "object" && k in value) {
         value = value[k];
       } else {
-        // Fallback al español si no se encuentra la clave
+        // Fallback al español si no se encuentra la clave en el idioma actual
         value = translations.es;
         for (const fallbackKey of keys) {
           if (value && typeof value === "object" && fallbackKey in value) {
             value = value[fallbackKey];
           } else {
-            return key; // Devolver la clave si no se encuentra
+            return key; // Devolver la clave si no se encuentra en ningún lado
           }
         }
         break;
@@ -410,7 +438,18 @@ export function useI18n() {
     return value || key;
   };
 
-  // Función para obtener texto con interpolación simple
+  /**
+   * Obtiene texto traducido con interpolación de parámetros.
+   * Reemplaza marcadores {parametro} con valores del objeto params.
+   *
+   * @param {string} key - Clave de traducción
+   * @param {Object} params - Objeto con parámetros para interpolación
+   * @returns {string} Texto traducido con parámetros interpolados
+   *
+   * @example
+   * // Con traducciones: "sublevelName": "Sublevel {number}"
+   * tInterpolate("sublevelName", { number: 3 }) // "Sublevel 3"
+   */
   const tInterpolate = (key, params = {}) => {
     let text = t(key);
     Object.keys(params).forEach((param) => {
@@ -419,7 +458,7 @@ export function useI18n() {
     return text;
   };
 
-  // Computed properties
+  // Computed properties para conveniencia y reactividad
   const isSpanish = computed(() => currentLanguage.value === "es");
   const isEnglish = computed(() => currentLanguage.value === "en");
   const languageFlag = computed(() =>
@@ -430,14 +469,19 @@ export function useI18n() {
   );
 
   return {
-    currentLanguage,
-    setLanguage,
-    toggleLanguage,
-    t,
-    tInterpolate,
-    isSpanish,
-    isEnglish,
-    languageFlag,
-    languageName,
+    // Estados reactivos
+    currentLanguage, // Idioma actual ("es" o "en")
+
+    // Funciones principales
+    setLanguage, // Establecer idioma específico
+    toggleLanguage, // Alternar entre idiomas
+    t, // Obtener traducción simple
+    tInterpolate, // Obtener traducción con interpolación
+
+    // Computed properties de conveniencia
+    isSpanish, // true si el idioma actual es español
+    isEnglish, // true si el idioma actual es inglés
+    languageFlag, // Emoji de bandera del idioma actual
+    languageName, // Nombre del idioma actual
   };
 }

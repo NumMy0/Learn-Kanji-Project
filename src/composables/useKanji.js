@@ -1,46 +1,78 @@
 import { ref, reactive } from "vue";
 
-// Estado global compartido entre todas las instancias
+/**
+ * Estado global compartido entre todas las instancias del composable.
+ * Permite mantener el estado persistente durante la navegación y
+ * compartir datos entre diferentes componentes.
+ */
 const globalState = {
-  loading: ref(false),
-  error: ref(null),
+  loading: ref(false), // Estado de carga de datos
+  error: ref(null), // Errores de API o validación
+
+  // Datos del kanji actualmente seleccionado
   kanjiData: reactive({
-    Kanji: "",
-    CorrectMeaning: "",
-    CorrectReadingOn: "",
-    CorrectReadingKun: "",
-    AllValidOnReadings: [],
-    AllValidKunReadings: [],
-    AllValidMeanings: [],
+    Kanji: "", // Caracter kanji
+    CorrectMeaning: "", // Significado principal
+    CorrectReadingOn: "", // Lectura On principal
+    CorrectReadingKun: "", // Lectura Kun principal
+    AllValidOnReadings: [], // Todas las lecturas On válidas
+    AllValidKunReadings: [], // Todas las lecturas Kun válidas
+    AllValidMeanings: [], // Todos los significados válidos
   }),
+
+  // Datos de navegación por subniveles
   sublevelData: reactive({
-    currentLevel: "",
-    currentSublevel: 1,
-    totalSublevels: 1,
-    currentKanjiIndex: 0,
-    kanjiList: [],
-    kanjisPerSublevel: 100,
+    currentLevel: "", // Nivel JLPT actual (ej: "jlpt-5")
+    currentSublevel: 1, // Subnivel actual (1, 2, 3...)
+    totalSublevels: 1, // Total de subniveles disponibles
+    currentKanjiIndex: 0, // Índice del kanji actual en el subnivel
+    kanjiList: [], // Lista completa de kanjis del nivel
+    kanjisPerSublevel: 100, // Kanjis por subnivel (configurable)
   }),
+
+  // Datos de navegación general (compatibilidad)
   navigationData: reactive({
-    currentLevel: "",
-    kanjiList: [],
-    currentKanjiIndex: 0,
+    currentLevel: "", // Nivel actual
+    kanjiList: [], // Lista de kanjis
+    currentKanjiIndex: 0, // Índice actual
   }),
 };
 
+/**
+ * Composable principal para manejo de datos de kanji.
+ * Proporciona funcionalidad completa para cargar, navegar y gestionar
+ * datos de kanji organizados por niveles JLPT y subniveles.
+ *
+ * @returns {Object} Estados y funciones para gestión de kanji
+ */
 export function useKanji() {
+  // Referencias a los estados globales para reactividad
   const loading = globalState.loading;
   const error = globalState.error;
   const kanjiData = globalState.kanjiData;
   const sublevelData = globalState.sublevelData;
   const navigationData = globalState.navigationData;
 
-  // Función para calcular el número de subniveles
+  /**
+   * Calcula el número total de subniveles basado en la cantidad de kanjis.
+   *
+   * @param {number} totalKanjis - Total de kanjis en el nivel
+   * @param {number} kanjisPerSublevel - Kanjis por subnivel (default: 100)
+   * @returns {number} Número de subniveles necesarios
+   */
   const calculateSublevels = (totalKanjis, kanjisPerSublevel = 100) => {
     return Math.ceil(totalKanjis / kanjisPerSublevel);
   };
 
-  // Función para obtener el rango de kanjis para un subnivel específico
+  /**
+   * Obtiene el rango de kanjis para un subnivel específico.
+   * Calcula los índices de inicio y fin, y extrae los kanjis correspondientes.
+   *
+   * @param {Array} kanjiList - Lista completa de kanjis
+   * @param {number} sublevel - Número del subnivel (1-indexed)
+   * @param {number} kanjisPerSublevel - Kanjis por subnivel (default: 100)
+   * @returns {Object} Objeto con startIndex, endIndex y array de kanjis
+   */
   const getKanjiRangeForSublevel = (
     kanjiList,
     sublevel,
@@ -55,9 +87,15 @@ export function useKanji() {
     };
   };
 
-  // Significados se mantienen siempre en inglés como vienen de la API
-
-  // Función para cargar kanjis por nivel y subnivel
+  /**
+   * Carga kanjis por nivel y subnivel específico.
+   * Valida la existencia del subnivel y carga el primer kanji automáticamente.
+   *
+   * @param {string} level - Nivel JLPT (ej: "jlpt-5")
+   * @param {number} sublevel - Número del subnivel (default: 1)
+   * @returns {Object} Datos del kanji cargado
+   * @throws {Error} Si el subnivel no es válido
+   */
   const fetchKanjisBySublevel = async (level, sublevel = 1) => {
     try {
       loading.value = true;
@@ -80,7 +118,7 @@ export function useKanji() {
       sublevelData.kanjiList = levelInfo.kanjiList;
       sublevelData.currentKanjiIndex = 0;
 
-      // También actualizar navigationData para compatibilidad
+      // También actualizar navigationData para compatibilidad con componentes existentes
       navigationData.currentLevel = level;
       navigationData.kanjiList = levelInfo.kanjiList;
       navigationData.currentKanjiIndex = 0;
@@ -92,7 +130,7 @@ export function useKanji() {
         sublevelData.kanjisPerSublevel
       );
 
-      // Cargar el primer kanji del subnivel
+      // Cargar el primer kanji del subnivel automáticamente
       if (kanjiRange.kanjis.length > 0) {
         const selectedKanji = kanjiRange.kanjis[0];
         await loadKanjiDetails(selectedKanji);
@@ -109,12 +147,20 @@ export function useKanji() {
     }
   };
 
-  // Función para cargar los detalles de un kanji específico
+  /**
+   * Carga los detalles completos de un kanji específico desde la API.
+   * Procesa lecturas On/Kun, significados y maneja casos especiales como
+   * lecturas Kun con puntos (oku.rigana).
+   *
+   * @param {string} kanjiCharacter - Caracter kanji a cargar
+   * @returns {Object} Datos completos del kanji
+   * @throws {Error} Si no se pueden obtener los detalles del kanji
+   */
   const loadKanjiDetails = async (kanjiCharacter) => {
     try {
       kanjiData.Kanji = kanjiCharacter;
 
-      // Obtener detalles del kanji específico
+      // Obtener detalles del kanji específico desde la API
       const kanjiResponse = await fetch(
         `https://kanjiapi.dev/v1/kanji/${kanjiCharacter}`
       );
@@ -127,32 +173,32 @@ export function useKanji() {
 
       const kanjiDetails = await kanjiResponse.json();
 
-      // Procesamiento de lecturas On
+      // Procesamiento de lecturas On (音読み)
       if (kanjiDetails.on_readings?.length > 0) {
         kanjiData.CorrectReadingOn = kanjiDetails.on_readings[0];
-        // Almacenar todas las lecturas on válidas para validación
+        // Almacenar todas las lecturas On válidas para validación flexible
         kanjiData.AllValidOnReadings = kanjiDetails.on_readings;
       } else {
         kanjiData.CorrectReadingOn = "Lectura On no disponible";
         kanjiData.AllValidOnReadings = [];
       }
 
-      // Procesamiento de lecturas Kun con manejo de puntos
+      // Procesamiento de lecturas Kun (訓読み) con manejo especial de puntos
       if (kanjiDetails.kun_readings?.length > 0) {
         const firstKunReading = kanjiDetails.kun_readings[0];
         kanjiData.CorrectReadingKun = firstKunReading;
 
-        // Extraer todas las variantes válidas de lecturas kun
+        // Extraer todas las variantes válidas de lecturas Kun
         kanjiData.AllValidKunReadings = [];
 
         kanjiDetails.kun_readings.forEach((reading) => {
-          // Agregar la lectura completa
+          // Agregar la lectura completa tal como viene
           kanjiData.AllValidKunReadings.push(reading);
 
-          // Si contiene punto, agregar también las partes separadas
+          // Si contiene punto (okurigana), agregar también las variantes
           if (reading.includes(".")) {
             const parts = reading.split(".");
-            // Agregar la parte antes del punto (raíz)
+            // Agregar la parte antes del punto (raíz del kanji)
             if (parts[0]) {
               kanjiData.AllValidKunReadings.push(parts[0]);
             }
@@ -161,7 +207,7 @@ export function useKanji() {
           }
         });
 
-        // Eliminar duplicados
+        // Eliminar duplicados para evitar validaciones redundantes
         kanjiData.AllValidKunReadings = [
           ...new Set(kanjiData.AllValidKunReadings),
         ];
@@ -170,15 +216,16 @@ export function useKanji() {
         kanjiData.AllValidKunReadings = [];
       }
 
+      // Procesamiento de significados (siempre en inglés como referencia estándar)
       const originalMeaning =
         kanjiDetails.meanings?.length > 0
           ? kanjiDetails.meanings[0]
           : "Meaning not available";
 
-      // Los significados siempre se muestran en inglés como vienen de la API
+      // Los significados se mantienen en inglés como vienen de la API
       kanjiData.CorrectMeaning = originalMeaning;
 
-      // Almacenar todos los significados válidos para validación
+      // Almacenar todos los significados válidos para validación flexible
       kanjiData.AllValidMeanings =
         kanjiDetails.meanings?.length > 0 ? kanjiDetails.meanings : [];
 
@@ -189,7 +236,15 @@ export function useKanji() {
     }
   };
 
-  // Función para obtener el siguiente kanji en el subnivel actual
+  // ===== FUNCIONES DE NAVEGACIÓN POR SUBNIVELES =====
+
+  /**
+   * Obtiene el siguiente kanji en el subnivel actual.
+   * Valida que no se exceda el rango del subnivel.
+   *
+   * @returns {Object} Datos del siguiente kanji
+   * @throws {Error} Si no hay más kanjis en el subnivel
+   */
   const getNextKanji = async () => {
     try {
       if (sublevelData.kanjiList.length === 0) {
@@ -220,7 +275,13 @@ export function useKanji() {
     }
   };
 
-  // Función para obtener el kanji anterior en el subnivel actual
+  /**
+   * Obtiene el kanji anterior en el subnivel actual.
+   * Valida que no se vaya por debajo del índice 0.
+   *
+   * @returns {Object} Datos del kanji anterior
+   * @throws {Error} Si ya está en el primer kanji del subnivel
+   */
   const getPreviousKanji = async () => {
     try {
       if (sublevelData.kanjiList.length === 0) {
@@ -251,7 +312,13 @@ export function useKanji() {
     }
   };
 
-  // Función para obtener un kanji aleatorio del subnivel actual
+  /**
+   * Obtiene un kanji aleatorio del subnivel actual.
+   * Útil para práctica sin orden específico.
+   *
+   * @returns {Object} Datos del kanji aleatorio
+   * @throws {Error} Si no hay kanjis disponibles
+   */
   const getRandomKanjiFromSublevel = async () => {
     try {
       if (sublevelData.kanjiList.length === 0) {
@@ -278,9 +345,15 @@ export function useKanji() {
     }
   };
 
-  // ===== FUNCIONES DE NAVEGACIÓN GENERAL (TODOS LOS NIVELES) =====
+  // ===== FUNCIONES DE NAVEGACIÓN GENERAL (NIVEL COMPLETO) =====
 
-  // Función para obtener el siguiente kanji del nivel actual
+  /**
+   * Obtiene el siguiente kanji del nivel completo (sin restricción de subnivel).
+   * Implementa navegación circular: al llegar al final vuelve al inicio.
+   *
+   * @returns {Object} Datos del siguiente kanji
+   * @throws {Error} Si no hay kanjis cargados
+   */
   const getNextKanjiFromLevel = async () => {
     try {
       if (navigationData.kanjiList.length === 0) {
@@ -290,7 +363,7 @@ export function useKanji() {
       const nextIndex = navigationData.currentKanjiIndex + 1;
 
       if (nextIndex >= navigationData.kanjiList.length) {
-        // Si llegamos al final, volver al primero (loop)
+        // Si llegamos al final, volver al primero (navegación circular)
         navigationData.currentKanjiIndex = 0;
       } else {
         navigationData.currentKanjiIndex = nextIndex;
@@ -307,7 +380,13 @@ export function useKanji() {
     }
   };
 
-  // Función para obtener el kanji anterior del nivel actual
+  /**
+   * Obtiene el kanji anterior del nivel completo.
+   * Implementa navegación circular: al llegar al inicio va al final.
+   *
+   * @returns {Object} Datos del kanji anterior
+   * @throws {Error} Si no hay kanjis cargados
+   */
   const getPreviousKanjiFromLevel = async () => {
     try {
       if (navigationData.kanjiList.length === 0) {
@@ -317,7 +396,7 @@ export function useKanji() {
       const previousIndex = navigationData.currentKanjiIndex - 1;
 
       if (previousIndex < 0) {
-        // Si llegamos al inicio, ir al último kanji (loop)
+        // Si llegamos al inicio, ir al último kanji (navegación circular)
         navigationData.currentKanjiIndex = navigationData.kanjiList.length - 1;
       } else {
         navigationData.currentKanjiIndex = previousIndex;
@@ -334,7 +413,12 @@ export function useKanji() {
     }
   };
 
-  // Función para obtener un kanji aleatorio del nivel actual
+  /**
+   * Obtiene un kanji aleatorio del nivel completo.
+   *
+   * @returns {Object} Datos del kanji aleatorio
+   * @throws {Error} Si no hay kanjis cargados
+   */
   const getRandomKanjiFromLevel = async () => {
     try {
       if (navigationData.kanjiList.length === 0) {
@@ -356,9 +440,17 @@ export function useKanji() {
     }
   };
 
-  // Función universal para navegar al siguiente kanji (detecta automáticamente si es subnivel o nivel)
+  // ===== FUNCIONES UNIVERSALES DE NAVEGACIÓN =====
+
+  /**
+   * Función universal para navegar al siguiente kanji.
+   * Detecta automáticamente si debe usar navegación por subnivel o por nivel completo.
+   *
+   * @returns {Object} Datos del siguiente kanji
+   * @throws {Error} Si no hay kanjis cargados
+   */
   const goToNextKanji = async () => {
-    // Si estamos en modo subnivel (cualquier nivel JLPT con subniveles), usar funciones de subnivel
+    // Si estamos en modo subnivel (nivel JLPT con múltiples subniveles)
     if (
       sublevelData.currentLevel &&
       sublevelData.kanjiList.length > 0 &&
@@ -366,7 +458,7 @@ export function useKanji() {
     ) {
       return await getNextKanji();
     }
-    // Para niveles sin subniveles, usar navegación general
+    // Para niveles sin subniveles, usar navegación de nivel completo
     else if (navigationData.kanjiList.length > 0) {
       return await getNextKanjiFromLevel();
     } else {
@@ -374,9 +466,15 @@ export function useKanji() {
     }
   };
 
-  // Función universal para obtener kanji aleatorio
+  /**
+   * Función universal para obtener un kanji aleatorio.
+   * Detecta automáticamente el contexto de navegación apropiado.
+   *
+   * @returns {Object} Datos del kanji aleatorio
+   * @throws {Error} Si no hay kanjis cargados
+   */
   const goToRandomKanji = async () => {
-    // Si estamos en modo subnivel (cualquier nivel JLPT con subniveles), usar funciones de subnivel
+    // Si estamos en modo subnivel (nivel JLPT con múltiples subniveles)
     if (
       sublevelData.currentLevel &&
       sublevelData.kanjiList.length > 0 &&
@@ -384,7 +482,7 @@ export function useKanji() {
     ) {
       return await getRandomKanjiFromSublevel();
     }
-    // Para niveles sin subniveles, usar navegación general
+    // Para niveles sin subniveles, usar navegación de nivel completo
     else if (navigationData.kanjiList.length > 0) {
       return await getRandomKanjiFromLevel();
     } else {
@@ -392,9 +490,15 @@ export function useKanji() {
     }
   };
 
-  // Función universal para navegar al kanji anterior
+  /**
+   * Función universal para navegar al kanji anterior.
+   * Detecta automáticamente el contexto de navegación apropiado.
+   *
+   * @returns {Object} Datos del kanji anterior
+   * @throws {Error} Si no hay kanjis cargados
+   */
   const goToPreviousKanji = async () => {
-    // Si estamos en modo subnivel (cualquier nivel JLPT con subniveles), usar funciones de subnivel
+    // Si estamos en modo subnivel (nivel JLPT con múltiples subniveles)
     if (
       sublevelData.currentLevel &&
       sublevelData.kanjiList.length > 0 &&
@@ -402,7 +506,7 @@ export function useKanji() {
     ) {
       return await getPreviousKanji();
     }
-    // Para niveles sin subniveles, usar navegación general
+    // Para niveles sin subniveles, usar navegación de nivel completo
     else if (navigationData.kanjiList.length > 0) {
       return await getPreviousKanjiFromLevel();
     } else {
@@ -410,10 +514,19 @@ export function useKanji() {
     }
   };
 
-  // Función para obtener información de subniveles de un nivel
+  // ===== FUNCIONES DE GESTIÓN DE NIVELES Y UTILIDADES =====
+
+  /**
+   * Obtiene información completa de subniveles para un nivel específico.
+   * Calcula el número de subniveles basado en la cantidad total de kanjis.
+   *
+   * @param {string} level - Nivel JLPT (ej: "jlpt-5")
+   * @returns {Object} Información del nivel con kanjiList, totalKanjis y totalSublevels
+   * @throws {Error} Si no se puede obtener la información del nivel
+   */
   const getSublevelsInfo = async (level) => {
     try {
-      // Obtener la lista completa de kanjis del nivel
+      // Obtener la lista completa de kanjis del nivel desde la API
       const levelResponse = await fetch(
         `https://kanjiapi.dev/v1/kanji/${level}`
       );
@@ -447,12 +560,20 @@ export function useKanji() {
     }
   };
 
-  // Función original para cargar kanjis por nivel (para otros niveles que no sean jlpt-4)
+  /**
+   * Función original para cargar kanjis por nivel completo (sin subniveles).
+   * Mantiene compatibilidad con niveles que no requieren subdivisión.
+   *
+   * @param {string} level - Nivel a cargar
+   * @returns {Object} Datos del primer kanji del nivel
+   * @throws {Error} Si no se puede cargar el nivel
+   */
   const fetchKanjiByLevel = async (level) => {
     try {
       loading.value = true;
       error.value = null;
 
+      // Obtener lista de kanjis del nivel
       const levelResponse = await fetch(
         `https://kanjiapi.dev/v1/kanji/${level}`
       );
@@ -469,82 +590,14 @@ export function useKanji() {
         throw new Error(`No se encontraron kanjis para el nivel ${level}`);
       }
 
-      // Guardar la lista completa para navegación
+      // Configurar estado de navegación general
       navigationData.currentLevel = level;
       navigationData.kanjiList = levelData;
       navigationData.currentKanjiIndex = 0;
 
-      // Seleccionar el primer kanji
+      // Seleccionar y cargar el primer kanji automáticamente
       const selectedKanji = levelData[0];
-      kanjiData.Kanji = selectedKanji;
-
-      // Segunda llamada: obtener detalles del kanji específico
-      const kanjiResponse = await fetch(
-        `https://kanjiapi.dev/v1/kanji/${selectedKanji}`
-      );
-
-      if (!kanjiResponse.ok) {
-        throw new Error(
-          `Error ${kanjiResponse.status}: No se pudieron obtener los detalles del kanji ${selectedKanji}`
-        );
-      }
-
-      const kanjiDetails = await kanjiResponse.json();
-
-      // Procesamiento de lecturas On
-      if (kanjiDetails.on_readings?.length > 0) {
-        kanjiData.CorrectReadingOn = kanjiDetails.on_readings[0];
-        // Almacenar todas las lecturas on válidas para validación
-        kanjiData.AllValidOnReadings = kanjiDetails.on_readings;
-      } else {
-        kanjiData.CorrectReadingOn = "Lectura On no disponible";
-        kanjiData.AllValidOnReadings = [];
-      }
-
-      // Procesamiento de lecturas Kun con manejo de puntos
-      if (kanjiDetails.kun_readings?.length > 0) {
-        const firstKunReading = kanjiDetails.kun_readings[0];
-        kanjiData.CorrectReadingKun = firstKunReading;
-
-        // Extraer todas las variantes válidas de lecturas kun
-        kanjiData.AllValidKunReadings = [];
-
-        kanjiDetails.kun_readings.forEach((reading) => {
-          // Agregar la lectura completa
-          kanjiData.AllValidKunReadings.push(reading);
-
-          // Si contiene punto, agregar también las partes separadas
-          if (reading.includes(".")) {
-            const parts = reading.split(".");
-            // Agregar la parte antes del punto (raíz)
-            if (parts[0]) {
-              kanjiData.AllValidKunReadings.push(parts[0]);
-            }
-            // Agregar la combinación completa sin el punto
-            kanjiData.AllValidKunReadings.push(reading.replace(".", ""));
-          }
-        });
-
-        // Eliminar duplicados
-        kanjiData.AllValidKunReadings = [
-          ...new Set(kanjiData.AllValidKunReadings),
-        ];
-      } else {
-        kanjiData.CorrectReadingKun = "Lectura Kun no disponible";
-        kanjiData.AllValidKunReadings = [];
-      }
-
-      const originalMeaning =
-        kanjiDetails.meanings?.length > 0
-          ? kanjiDetails.meanings[0]
-          : "Meaning not available";
-
-      // Los significados siempre se muestran en inglés como vienen de la API
-      kanjiData.CorrectMeaning = originalMeaning;
-
-      // Almacenar todos los significados válidos para validación
-      kanjiData.AllValidMeanings =
-        kanjiDetails.meanings?.length > 0 ? kanjiDetails.meanings : [];
+      await loadKanjiDetails(selectedKanji);
 
       return kanjiData;
     } catch (err) {
@@ -556,7 +609,13 @@ export function useKanji() {
     }
   };
 
-  // Función para verificar si un nivel debería usar subniveles basado en la cantidad de kanjis
+  /**
+   * Verifica si un nivel debería usar subniveles basado en la cantidad de kanjis.
+   * Útil para determinar la estrategia de navegación apropiada.
+   *
+   * @param {string} level - Nivel a verificar
+   * @returns {boolean} true si el nivel debe usar subniveles
+   */
   const shouldUseSublevel = async (level) => {
     try {
       const info = await getSublevelsInfo(level);
@@ -568,6 +627,10 @@ export function useKanji() {
     }
   };
 
+  /**
+   * Resetea todos los datos de kanji al estado inicial.
+   * Útil para limpiar el estado entre navegaciones o al cambiar de nivel.
+   */
   const resetKanjiData = () => {
     kanjiData.Kanji = "";
     kanjiData.CorrectMeaning = "";
@@ -580,23 +643,34 @@ export function useKanji() {
   };
 
   return {
-    loading,
-    error,
-    kanjiData,
-    sublevelData,
-    navigationData,
-    fetchKanjiByLevel,
-    fetchKanjisBySublevel,
-    getSublevelsInfo,
-    getNextKanji,
-    getPreviousKanji,
-    getPreviousKanjiFromLevel,
-    getRandomKanjiFromLevel,
-    getRandomKanjiFromSublevel,
-    goToNextKanji,
-    goToPreviousKanji,
-    goToRandomKanji,
-    shouldUseSublevel,
-    resetKanjiData,
+    // Estados globales
+    loading, // Estado de carga
+    error, // Errores de API o validación
+    kanjiData, // Datos del kanji actual
+    sublevelData, // Estado de navegación por subniveles
+    navigationData, // Estado de navegación general
+
+    // Funciones principales de carga
+    fetchKanjiByLevel, // Cargar nivel completo
+    fetchKanjisBySublevel, // Cargar por subnivel específico
+    getSublevelsInfo, // Obtener info de subniveles
+
+    // Funciones de navegación por subniveles
+    getNextKanji, // Siguiente en subnivel
+    getPreviousKanji, // Anterior en subnivel
+    getRandomKanjiFromSublevel, // Aleatorio en subnivel
+
+    // Funciones de navegación por nivel completo
+    getPreviousKanjiFromLevel, // Anterior en nivel
+    getRandomKanjiFromLevel, // Aleatorio en nivel
+
+    // Funciones universales de navegación
+    goToNextKanji, // Siguiente (detecta contexto)
+    goToPreviousKanji, // Anterior (detecta contexto)
+    goToRandomKanji, // Aleatorio (detecta contexto)
+
+    // Funciones de utilidad
+    shouldUseSublevel, // Verificar si usar subniveles
+    resetKanjiData, // Limpiar datos
   };
 }

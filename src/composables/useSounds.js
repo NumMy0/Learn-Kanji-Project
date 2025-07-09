@@ -1,10 +1,38 @@
+/**
+ * useSounds.js
+ *
+ * Composable para manejar efectos de sonido en la aplicación.
+ * Proporciona funciones para reproducir sonidos con soporte para
+ * sonidos sintéticos y archivos de audio, con sistema de cache
+ * y control de volumen.
+ *
+ * Características:
+ * - Sistema de cache para optimizar rendimiento
+ * - Soporte para sonidos sintéticos (Web Audio API)
+ * - Fallback a archivos de audio tradicionales
+ * - Control global de habilitación/deshabilitación
+ * - Precarga automática de sonidos
+ * - Control de volumen personalizable
+ *
+ * @author Learn Kanji Project
+ * @since 1.0.0
+ */
+
 import { ref } from "vue";
 import { syntheticSounds } from "../assets/sounds/synthetic.js";
 
-// Estado para controlar si los sonidos están habilitados
+// ===== ESTADO REACTIVO =====
+/** @type {Ref<boolean>} Controla si los sonidos están habilitados globalmente */
 const soundEnabled = ref(true);
 
-// URLs de los archivos de sonido
+/** @type {Ref<boolean>} Determina si usar sonidos sintéticos por defecto */
+const useSynthetic = ref(true);
+
+// ===== CONFIGURACIÓN DE ARCHIVOS =====
+/**
+ * URLs de los archivos de sonido
+ * @type {Object<string, string>}
+ */
 const soundFiles = {
   buttonClick: "/src/assets/sounds/button-click.mp3",
   correctAnswer: "/src/assets/sounds/correct-answer.mp3",
@@ -12,30 +40,44 @@ const soundFiles = {
   keyboardKey: "/src/assets/sounds/keyboard-key.mp3",
 };
 
-// Cache de objetos Audio para mejorar el rendimiento
+/**
+ * Cache de objetos Audio para mejorar el rendimiento
+ * @type {Object<string, HTMLAudioElement>}
+ */
 const audioCache = {};
-const useSynthetic = ref(true); // Usar sonidos sintéticos por defecto
 
-// Función para precargar todos los sonidos
+// ===== FUNCIONES DE GESTIÓN =====
+/**
+ * Precarga todos los archivos de sonido en memoria
+ * Mejora la latencia al reproducir sonidos posteriormente
+ */
 const preloadSounds = () => {
   Object.entries(soundFiles).forEach(([key, url]) => {
     try {
       const audio = new Audio(url);
-      audio.preload = "auto";
+      audio.preload = "auto"; // Precargar automáticamente
       audio.volume = 0.5; // Volumen por defecto al 50%
-      audioCache[key] = audio;
+      audioCache[key] = audio; // Guardar en cache
     } catch (error) {
       console.warn(`No se pudo precargar el sonido ${key}:`, error);
     }
   });
 };
 
-// Función para reproducir un sonido específico
+/**
+ * Reproduce un sonido específico
+ *
+ * @param {string} soundName - Nombre del sonido a reproducir
+ * @param {number} volume - Volumen de reproducción (0.0 a 1.0)
+ * @example
+ * playSound('buttonClick', 0.7); // Reproducir con 70% de volumen
+ */
 const playSound = (soundName, volume = 0.5) => {
+  // No reproducir si los sonidos están deshabilitados
   if (!soundEnabled.value) return;
 
   try {
-    // Si usamos sonidos sintéticos, reproducir directamente
+    // Prioridad: sonidos sintéticos si están disponibles
     if (useSynthetic.value && syntheticSounds[soundName]) {
       syntheticSounds[soundName]();
       return;
@@ -48,7 +90,7 @@ const playSound = (soundName, volume = 0.5) => {
       const url = soundFiles[soundName];
       if (!url) {
         console.warn(`Sonido '${soundName}' no encontrado`);
-        // Fallback a sonido sintético
+        // Fallback a sonido sintético si existe
         if (syntheticSounds[soundName]) {
           syntheticSounds[soundName]();
         }

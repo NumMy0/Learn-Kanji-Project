@@ -1,25 +1,42 @@
 import { ref, computed } from "vue";
 import { useI18n } from "./useI18n";
 
+/**
+ * Composable para manejar la validación de respuestas de kanji.
+ * Proporciona lógica completa para validar significados y lecturas On/Kun,
+ * con soporte para múltiples respuestas válidas y normalización de texto.
+ *
+ * @param {Object} props - Props del componente con datos del kanji
+ * @param {Object} initialValidReadings - Lecturas válidas iniciales
+ * @returns {Object} Estados y funciones para validación de kanji
+ */
 export function useKanjiValidation(props, initialValidReadings = {}) {
-  // Mantenemos las lecturas válidas como ref para poder actualizarlas
+  // Estado reactivo para las lecturas válidas (se actualiza dinámicamente)
   const validReadings = ref({
     AllValidOnReadings: initialValidReadings.AllValidOnReadings || [],
     AllValidKunReadings: initialValidReadings.AllValidKunReadings || [],
     AllValidMeanings: initialValidReadings.AllValidMeanings || [],
   });
 
-  const userInputMeaning = ref("");
-  const userInputOn = ref("");
-  const userInputKun = ref("");
-  const attempts = ref(0);
-  const showAnswer = ref(false);
-  const isCorrect = ref(null);
-  const matchedReadingType = ref("");
-  const showHint = ref(false);
-  const maxAttempts = 3;
+  // Estados de entrada del usuario
+  const userInputMeaning = ref(""); // Entrada de significado
+  const userInputOn = ref(""); // Entrada de lectura On
+  const userInputKun = ref(""); // Entrada de lectura Kun
 
-  // Función para actualizar las lecturas válidas cuando cambia el kanji
+  // Estados de validación
+  const attempts = ref(0); // Número de intentos realizados
+  const showAnswer = ref(false); // Mostrar respuesta correcta
+  const isCorrect = ref(null); // Resultado de validación (true/false/null)
+  const matchedReadingType = ref(""); // Tipo de lectura que coincidió
+  const showHint = ref(false); // Mostrar pista al usuario
+  const maxAttempts = 3; // Máximo número de intentos permitidos
+
+  /**
+   * Actualiza las lecturas válidas cuando cambia el kanji.
+   * Permite al composable trabajar con datos dinámicos.
+   *
+   * @param {Object} newValidReadings - Nuevas lecturas válidas
+   */
   const updateValidReadings = (newValidReadings) => {
     validReadings.value = {
       AllValidOnReadings: newValidReadings.AllValidOnReadings || [],
@@ -28,13 +45,19 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     };
   };
 
-  // Computed para verificar qué datos están disponibles
+  /**
+   * Computed que verifica si el significado está disponible para validación.
+   * Excluye datos marcados como "no disponible".
+   */
   const meaningAvailable = computed(() => {
     return (
       props.CorrectMeaning && !props.CorrectMeaning.includes("no disponible")
     );
   });
 
+  /**
+   * Computed que verifica si la lectura On está disponible para validación.
+   */
   const onReadingAvailable = computed(() => {
     return (
       props.CorrectReadingOn &&
@@ -42,6 +65,9 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     );
   });
 
+  /**
+   * Computed que verifica si la lectura Kun está disponible para validación.
+   */
   const kunReadingAvailable = computed(() => {
     return (
       props.CorrectReadingKun &&
@@ -49,6 +75,9 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     );
   });
 
+  /**
+   * Computed que verifica si hay al menos un tipo de dato disponible.
+   */
   const kanjiDataAvailable = computed(() => {
     return (
       meaningAvailable.value ||
@@ -57,7 +86,10 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     );
   });
 
-  // Computed para verificar si todos los inputs disponibles están llenos
+  /**
+   * Computed que verifica si todos los inputs disponibles están completos.
+   * Solo considera los campos que están disponibles para validación.
+   */
   const allInputsFilled = computed(() => {
     let allFilled = true;
 
@@ -76,12 +108,17 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     return allFilled;
   });
 
-  // Computed para verificar si se puede validar la respuesta
+  /**
+   * Computed que determina si se puede validar la respuesta.
+   * Requiere que todos los inputs estén llenos y que haya datos disponibles.
+   */
   const canValidateAnswer = computed(() => {
     return allInputsFilled.value && kanjiDataAvailable.value;
   });
 
-  // Computed para el texto del botón
+  /**
+   * Computed para el texto dinámico del botón de validación.
+   */
   const buttonText = computed(() => {
     if (!kanjiDataAvailable.value) {
       return "No hay datos disponibles";
@@ -92,25 +129,36 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     return "Validar Respuestas";
   });
 
-  // Computed para saber si el botón debe estar deshabilitado
+  /**
+   * Computed que determina si el botón debe estar deshabilitado.
+   */
   const isButtonDisabled = computed(() => {
     return !canValidateAnswer.value;
   });
 
-  // Computed para el progreso
+  /**
+   * Computed para calcular el progreso basado en intentos.
+   */
   const progressPercent = computed(() => {
     if (attempts.value === 0) return 0;
     return Math.min((attempts.value / maxAttempts) * 100, 100);
   });
 
-  // Función para normalizar respuestas
+  /**
+   * Normaliza texto para comparación de respuestas.
+   * Elimina espacios, puntuación y caracteres especiales, manteniendo solo
+   * caracteres japoneses y alfanuméricos.
+   *
+   * @param {string} text - Texto a normalizar
+   * @returns {string} Texto normalizado
+   */
   const normalizeText = (text) => {
     if (!text || typeof text !== "string") return "";
 
     // Convertir a minúsculas y eliminar espacios
     let normalized = text.toLowerCase().trim().replace(/\s+/g, "");
 
-    // Eliminar signos de puntuación japonesa
+    // Eliminar signos de puntuación japonesa comunes
     normalized = normalized.replace(/[-・。、～〜.]/g, "");
 
     // Preservar solo caracteres japoneses (hiragana, katakana) y alfanuméricos
@@ -122,7 +170,15 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     return normalized;
   };
 
-  // Función para validar cada campo individual
+  /**
+   * Valida un campo individual contra una respuesta correcta.
+   * Método simple para validación directa.
+   *
+   * @param {string} userInput - Entrada del usuario
+   * @param {string} correctAnswer - Respuesta correcta
+   * @param {string} fieldName - Nombre del campo para identificación
+   * @returns {Object} Resultado de validación con isCorrect y fieldName
+   */
   const validateField = (userInput, correctAnswer, fieldName) => {
     const userNormalized = normalizeText(userInput);
     const correctNormalized = normalizeText(correctAnswer);
@@ -131,7 +187,15 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     return { isCorrect, fieldName };
   };
 
-  // Función especializada para validar lecturas con múltiples opciones válidas
+  /**
+   * Valida un campo contra múltiples respuestas válidas.
+   * Especializado para lecturas On/Kun y significados que pueden tener múltiples variantes.
+   *
+   * @param {string} userInput - Entrada del usuario
+   * @param {Array} validReadings - Array de respuestas válidas
+   * @param {string} fieldName - Nombre del campo para identificación
+   * @returns {Object} Resultado de validación
+   */
   const validateReadingField = (userInput, validReadings, fieldName) => {
     if (
       !validReadings ||
@@ -144,22 +208,28 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
 
     const userNormalized = normalizeText(userInput);
 
-    // Convertir todas las lecturas válidas
+    // Normalizar todas las lecturas válidas para comparación
     const normalizedValidReadings = validReadings.map((r) => normalizeText(r));
 
-    // Verificar si el input del usuario coincide con alguna de las lecturas válidas
-    const isCorrect = normalizedValidReadings.includes(userNormalized);
+    // Verificar si el input del usuario coincide con alguna lectura válida
+    const fieldIsCorrect = normalizedValidReadings.includes(userNormalized);
 
-    return { isCorrect, fieldName };
+    return { isCorrect: fieldIsCorrect, fieldName };
   };
 
-  // Función para obtener una pista
+  /**
+   * Genera una pista mostrando las primeras letras de cada respuesta.
+   * Útil cuando el usuario ha fallado múltiples veces.
+   *
+   * @returns {string} Texto de pista con prefijos de las respuestas
+   */
   const getHint = () => {
     const { t } = useI18n();
     const meaning = props.CorrectMeaning || "";
     const onReading = props.CorrectReadingOn || "";
     const kunReading = props.CorrectReadingKun || "";
 
+    // Generar pistas mostrando la mitad de cada respuesta
     const meaningHint = meaning
       ? meaning.substring(0, Math.ceil(meaning.length / 2)) + "..."
       : "N/A";
@@ -175,7 +245,10 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     )}: ${onHint}, ${t("kunPrefix")}: ${kunHint}`;
   };
 
-  // Función para resetear el estado de validación
+  /**
+   * Resetea todos los estados de validación.
+   * Utilizado al cambiar de kanji o reiniciar el ejercicio.
+   */
   const resetValidation = () => {
     userInputMeaning.value = "";
     userInputOn.value = "";
@@ -187,7 +260,16 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     matchedReadingType.value = "";
   };
 
-  // Función principal de validación
+  /**
+   * Función principal de validación de respuestas.
+   * Valida todos los campos disponibles y maneja el flujo de intentos,
+   * pistas y animaciones de feedback.
+   *
+   * @param {Function} playButtonClick - Función para sonido de click
+   * @param {Function} playCorrectAnswer - Función para sonido de respuesta correcta
+   * @param {Function} playIncorrectAnswer - Función para sonido de respuesta incorrecta
+   * @param {Function} animateIn - Función para animaciones de feedback
+   */
   const validateAnswer = (
     playButtonClick,
     playCorrectAnswer,
@@ -196,6 +278,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
   ) => {
     playButtonClick();
 
+    // Verificar que hay datos disponibles
     if (!kanjiDataAvailable.value) {
       console.error("No hay datos del kanji disponibles para validar");
       isCorrect.value = false;
@@ -204,6 +287,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
       return;
     }
 
+    // Verificar que todos los campos están llenos
     if (!allInputsFilled.value) {
       return;
     }
@@ -214,7 +298,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     const incorrectAnswers = [];
     let allCorrect = true;
 
-    // Validar cada campo disponible
+    // Validar significado si está disponible
     if (meaningAvailable.value) {
       // Usar la lista de significados válidos si está disponible, sino usar el significado principal
       const validMeanings =
@@ -237,6 +321,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
       }
     }
 
+    // Validar lectura On si está disponible
     if (onReadingAvailable.value) {
       // Usar la lista de lecturas On válidas si está disponible, sino usar la respuesta principal
       const validOnReadings =
@@ -259,6 +344,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
       }
     }
 
+    // Validar lectura Kun si está disponible
     if (kunReadingAvailable.value) {
       // Usar la lista de lecturas Kun válidas si está disponible, sino usar la respuesta principal
       const validKunReadings =
@@ -281,8 +367,9 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
       }
     }
 
-    // Determinar el resultado final
+    // Determinar el resultado final y ejecutar acciones correspondientes
     if (allCorrect && correctAnswers.length > 0) {
+      // Todas las respuestas son correctas
       matchedReadingType.value =
         correctAnswers.length === 1
           ? `${correctAnswers[0]} correcta`
@@ -293,6 +380,7 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
       showAnswer.value = true;
       playCorrectAnswer();
 
+      // Animación de éxito
       animateIn(".success-animation", {
         scale: [0.8, 1.2, 1],
         opacity: [0, 1],
@@ -300,25 +388,30 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
         easing: "ease-out",
       });
     } else {
+      // Al menos una respuesta es incorrecta
       if (correctAnswers.length > 0) {
+        // Respuesta parcialmente correcta
         matchedReadingType.value = `${correctAnswers.join(" y ")} correcta${
           correctAnswers.length > 1 ? "s" : ""
         }, pero ${incorrectAnswers.join(" y ")} incorrecta${
           incorrectAnswers.length > 1 ? "s" : ""
         }`;
       } else {
+        // Todas las respuestas incorrectas
         const { t } = useI18n();
         matchedReadingType.value = t("allAnswersIncorrect");
       }
       isCorrect.value = false;
       playIncorrectAnswer();
 
+      // Mostrar respuesta después del máximo de intentos o pista en el segundo intento
       if (attempts.value >= maxAttempts) {
         showAnswer.value = true;
       } else if (attempts.value === 2) {
         showHint.value = true;
       }
 
+      // Animación de error
       animateIn(".error-shake", {
         x: [-10, 10, -10, 10, 0],
         duration: 0.5,
@@ -330,10 +423,12 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
   console.log("useKanjiValidation initialized with props:", props);
 
   return {
-    // Estado
+    // Estados de entrada del usuario
     userInputMeaning,
     userInputOn,
     userInputKun,
+
+    // Estados de validación
     attempts,
     showAnswer,
     isCorrect,
@@ -341,24 +436,26 @@ export function useKanjiValidation(props, initialValidReadings = {}) {
     showHint,
     maxAttempts,
 
-    // Computed
+    // Computed properties para disponibilidad de campos
     meaningAvailable,
     onReadingAvailable,
     kunReadingAvailable,
     kanjiDataAvailable,
+
+    // Computed properties para estado de validación
     allInputsFilled,
     canValidateAnswer,
     buttonText,
     isButtonDisabled,
     progressPercent,
 
-    // Función para actualizar lecturas válidas cuando cambia el kanji
+    // Función para actualizar lecturas válidas dinámicamente
     updateValidReadings,
 
-    // Funciones
-    validateAnswer,
-    resetValidation,
-    getHint,
-    normalizeText,
+    // Funciones principales
+    validateAnswer, // Validación principal
+    resetValidation, // Reset del estado
+    getHint, // Generación de pistas
+    normalizeText, // Normalización de texto para comparación
   };
 }
